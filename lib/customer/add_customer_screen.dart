@@ -106,7 +106,16 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.customer == null ? "Add Customer" : "Edit Customer"),
+        title: Text(
+          widget.customer == null ? "Add Customer" : "Edit Customer",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(15),

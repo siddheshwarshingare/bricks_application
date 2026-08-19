@@ -1,13 +1,15 @@
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/payment_model.dart';
+import 'package:bricks_application/models/sale_model.dart';
 import 'package:bricks_application/repositories/payment_repository.dart';
+import 'package:bricks_application/repositories/sale_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ReceivePaymentScreen extends StatefulWidget {
   final CustomerModel customer;
-
-  const ReceivePaymentScreen({super.key, required this.customer});
+  final SaleModel? sale;
+  const ReceivePaymentScreen({super.key, required this.customer, this.sale});
 
   @override
   State<ReceivePaymentScreen> createState() => _ReceivePaymentScreenState();
@@ -15,8 +17,8 @@ class ReceivePaymentScreen extends StatefulWidget {
 
 class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  final PaymentRepository repository = PaymentRepository();
+  final SaleRepository repository = SaleRepository();
+  // final PaymentRepository repository = PaymentRepository();
 
   final TextEditingController amountController = TextEditingController();
   final TextEditingController referenceController = TextEditingController();
@@ -67,20 +69,14 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
     });
 
     try {
-      final payment = PaymentModel(
-        id: "",
-        factoryId: widget.customer.factoryId,
-        customerId: widget.customer.id,
-        customerName: widget.customer.name,
+      await repository.addPaymentToSale(
+        sale: widget.sale!,
+        customer: widget.customer,
         amount: amount,
         paymentMethod: paymentMethod,
         referenceNumber: referenceController.text.trim(),
         remarks: remarksController.text.trim(),
-        paymentDate: Timestamp.fromDate(paymentDate),
-        createdAt: Timestamp.now(),
       );
-
-      await repository.addPayment(payment);
 
       if (!mounted) return;
 
@@ -103,7 +99,18 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Receive Payment"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          "Receive Payment",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(

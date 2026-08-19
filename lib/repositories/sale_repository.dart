@@ -92,9 +92,111 @@ class SaleRepository {
       transaction.update(customerRef, {
         'totalQuantity': currentQuantity + sale.quantity,
         'totalPurchase': updatedPurchase,
-        'totalPurchase': updatedPurchase,
+
         'totalPaid': updatedPaid,
         'pendingBalance': updatedPending,
+      });
+    });
+  }
+
+  Future<void> addPaymentToSale({
+    required SaleModel sale,
+    required CustomerModel customer,
+    required double amount,
+    String paymentMethod = "Cash",
+    String referenceNumber = "",
+    String remarks = "",
+  }) async {
+    if (amount <= 0) {
+      throw Exception("Payment amount must be greater than 0");
+    }
+
+    if (amount > sale.pendingAmount) {
+      throw Exception("Payment cannot be greater than pending amount");
+    }
+
+    final saleRef = _firestore
+        .collection('factories')
+        .doc(sale.factoryId)
+        .collection('sales')
+        .doc(sale.id);
+
+    final customerRef = _firestore
+        .collection('factories')
+        .doc(sale.factoryId)
+        .collection('customers')
+        .doc(customer.id);
+
+    final paymentRef = _firestore
+        .collection('factories')
+        .doc(sale.factoryId)
+        .collection('payments')
+        .doc();
+
+    await _firestore.runTransaction((transaction) async {
+      // Read current values from Firestore
+      final saleSnapshot = await transaction.get(saleRef);
+      final customerSnapshot = await transaction.get(customerRef);
+
+      if (!saleSnapshot.exists) {
+        throw Exception("Sale not found");
+      }
+
+      if (!customerSnapshot.exists) {
+        throw Exception("Customer not found");
+      }
+
+      final saleData = saleSnapshot.data() as Map<String, dynamic>;
+      final customerData = customerSnapshot.data() as Map<String, dynamic>;
+
+      final currentPaid = (saleData['paidAmount'] ?? 0).toDouble();
+
+      final totalAmount = (saleData['totalAmount'] ?? 0).toDouble();
+
+      final newPaid = currentPaid + amount;
+
+      final newPending = totalAmount - newPaid;
+
+      // --------------------------------
+      // 1. UPDATE SALE
+      // --------------------------------
+
+      transaction.update(saleRef, {
+        'paidAmount': newPaid,
+        'pendingAmount': newPending < 0 ? 0 : newPending,
+      });
+
+      // --------------------------------
+      // 2. ADD PAYMENT RECORD
+      // --------------------------------
+
+      transaction.set(paymentRef, {
+        'customerId': sale.customerId,
+        'customerName': sale.customerName,
+        'factoryId': sale.factoryId,
+        'saleId': sale.id,
+        'amount': amount,
+        'paymentMethod': paymentMethod,
+        'referenceNumber': referenceNumber,
+        'remarks': remarks,
+        'paymentDate': Timestamp.now(),
+        'createdAt': Timestamp.now(),
+      });
+
+      // --------------------------------
+      // 3. UPDATE CUSTOMER
+      // --------------------------------
+
+      final currentCustomerPaid = (customerData['totalPaid'] ?? 0).toDouble();
+
+      final currentPendingBalance = (customerData['pendingBalance'] ?? 0)
+          .toDouble();
+
+      transaction.update(customerRef, {
+        'totalPaid': currentCustomerPaid + amount,
+        'pendingBalance': currentPendingBalance - amount < 0
+            ? 0
+            : currentPendingBalance - amount,
       });
     });
   }

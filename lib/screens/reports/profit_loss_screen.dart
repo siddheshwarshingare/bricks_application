@@ -19,7 +19,18 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profit & Loss"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          "Profit & Loss",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+        centerTitle: true,
+      ),
 
       body: Column(
         children: [

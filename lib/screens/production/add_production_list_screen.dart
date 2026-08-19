@@ -160,7 +160,13 @@ class _AddProductionScreenState extends State<AddProductionScreen> {
       appBar: AppBar(
         title: Text(
           widget.production == null ? "Add Production" : "Edit Production",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
         ),
+        backgroundColor: const Color(0xff2563EB),
       ),
       body: StreamBuilder<List<WorkerModel>>(
         stream: workerRepository.getWorkers(widget.factory.id),

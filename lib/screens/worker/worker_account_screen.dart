@@ -3,6 +3,7 @@ import 'package:bricks_application/models/production_model.dart';
 import 'package:bricks_application/models/worker_model.dart';
 import 'package:bricks_application/repositories/production_repository.dart';
 import 'package:bricks_application/screens/worker/pay_worker_screen.dart';
+import 'package:bricks_application/services/worker_report_service.dart';
 import 'package:flutter/material.dart';
 
 class WorkerAccountScreen extends StatelessWidget {
@@ -14,12 +15,52 @@ class WorkerAccountScreen extends StatelessWidget {
     required this.factory,
     required this.worker,
   });
+  Widget _buildValue(String title, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontFamily: "Poppins",
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: "Poppins",
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final ProductionRepository productionRepository = ProductionRepository();
     return Scaffold(
-      appBar: AppBar(title: Text(worker.name)),
+      appBar: AppBar(
+        title: Text(
+          worker.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: "Poppins",
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+
+        backgroundColor: const Color(0xff2563EB),
+      ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -56,18 +97,41 @@ class WorkerAccountScreen extends StatelessWidget {
                           Text(
                             worker.name,
                             style: const TextStyle(
+                              fontFamily: "Poppins",
                               fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff111827),
                             ),
                           ),
 
                           const SizedBox(height: 8),
 
-                          Text("📞 ${worker.mobile}"),
+                          Text(
+                            "📞 ${worker.mobile}",
+                            style: const TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 16,
+                              color: Color(0xff111827),
+                            ),
+                          ),
 
-                          Text("🛠 ${worker.workType}"),
+                          Text(
+                            "🛠 ${worker.workType}",
+                            style: const TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 16,
+                              color: Color(0xff111827),
+                            ),
+                          ),
 
-                          Text("💰 Rate : ₹${worker.ratePer1000}/1000"),
+                          Text(
+                            "💰 Rate : ₹${worker.ratePer1000}/1000",
+                            style: const TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 16,
+                              color: Color(0xff111827),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -158,8 +222,9 @@ class WorkerAccountScreen extends StatelessWidget {
                     const Text(
                       "Production History",
                       style: TextStyle(
+                        fontFamily: "Poppins",
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
 
@@ -172,7 +237,20 @@ class WorkerAccountScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final production = productions[index];
 
-                        return Card(
+                        return Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0xffE5E7EB)),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0D000000),
+                                blurRadius: 12,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
                           child: ListTile(
                             title: Text(
                               "${production.bricksProduced.toString()} Bricks",
@@ -180,9 +258,36 @@ class WorkerAccountScreen extends StatelessWidget {
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("Earned : ₹${production.salaryEarned}"),
-                                Text("Paid : ₹${production.salaryPaid}"),
-                                Text("Remarks : ${production.remarks}"),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildValue(
+                                        "Salary",
+                                        "₹${production.salaryEarned.toStringAsFixed(0)}",
+                                        Colors.green,
+                                      ),
+                                    ),
+
+                                    Expanded(
+                                      child: _buildValue(
+                                        "Paid",
+                                        "₹${production.salaryPaid.toStringAsFixed(0)}",
+                                        Colors.blue,
+                                      ),
+                                    ),
+
+                                    Expanded(
+                                      child: _buildValue(
+                                        "Returned",
+                                        "₹${production.cashReturned.toStringAsFixed(0)}",
+                                        Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // Text("Earned : ₹${production.salaryEarned}"),
+                                // Text("Paid : ₹${production.salaryPaid}"),
+                                // Text("Remarks : ${production.remarks}"),
                               ],
                             ),
                             trailing: Text(
@@ -194,6 +299,42 @@ class WorkerAccountScreen extends StatelessWidget {
                         );
                       },
                     ),
+                    // 👇 CALL DOWNLOAD / SHARE HERE
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.download),
+                            label: const Text("Download"),
+                            onPressed: () async {
+                              await WorkerReportService.downloadWorkerReport(
+                                factory: factory,
+                                worker: worker,
+                                productions: productions,
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.share),
+                            label: const Text("Share"),
+                            onPressed: () async {
+                              await WorkerReportService.shareWorkerReport(
+                                factory: factory,
+                                worker: worker,
+                                productions: productions,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
                   ],
                 );
               },

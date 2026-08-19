@@ -81,10 +81,95 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
     super.dispose();
   }
 
+  Widget _infoTile(String title, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontFamily: "Poppins",
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: "Poppins",
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget summaryTile(IconData icon, String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: color.withOpacity(.15),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 12),
+
+              Text(
+                value,
+                style: const TextStyle(
+                  fontFamily: "Poppins",
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: "Poppins",
+              fontSize: 13,
+              color: Colors.grey,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.factory.name} Production")),
+      appBar: AppBar(
+        backgroundColor: const Color(0xff2563EB),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        elevation: 0,
+
+        title: const Text(
+          "Production",
+          style: TextStyle(
+            fontFamily: "Poppins",
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+          ),
+        ),
+      ),
 
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
@@ -105,8 +190,15 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
             child: TextField(
               controller: searchController,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
                 hintText: "Search Worker",
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Color(0xff2563EB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -123,36 +215,78 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: InkWell(
               onTap: showFilterBottomSheet,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                  horizontal: 18,
+                  vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade300),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xffE5E7EB)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x11000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.filter_alt),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        selectedFilter.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    Container(
+                      height: 42,
+                      width: 42,
+                      decoration: BoxDecoration(
+                        color: const Color(0xffEFF6FF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.filter_alt_rounded,
+                        color: Color(0xff2563EB),
                       ),
                     ),
-                    const Icon(Icons.keyboard_arrow_down),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Filter",
+                            style: TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+
+                          const SizedBox(height: 2),
+
+                          Text(
+                            selectedFilter.name,
+                            style: const TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.grey,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
+
           const SizedBox(height: 10),
           Expanded(
             child: StreamBuilder<List<ProductionModel>>(
@@ -191,47 +325,94 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
 
                 return Column(
                   children: [
-                    Card(
-                      margin: const EdgeInsets.all(15),
-                      child: Padding(
-                        padding: const EdgeInsets.all(15),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // const Text(
-                            //   "Total Production",
-                            //   style: TextStyle(
-                            //     fontSize: 18,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // Text(
-                            //   "${totalProduction.toStringAsFixed(0)} Bricks",
-                            //   style: const TextStyle(
-                            //     fontSize: 18,
-                            //     fontWeight: FontWeight.bold,
-                            //     color: Colors.orange,
-                            //   ),
-                            // ),
-                            Text(
-                              "🧱 ${summary["production"]!.toStringAsFixed(0)} Bricks",
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x11000000),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Today",
+                            style: TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
                             ),
+                          ),
 
-                            Text(
-                              "Final ₹${summary["earned"]!.toStringAsFixed(0)}",
-                            ),
+                          // const Text(
+                          //   "Today's Summary",
+                          //   style: TextStyle(
+                          //     fontFamily: "Poppins",
+                          //     fontSize: 18,
+                          //     fontWeight: FontWeight.w700,
+                          //   ),
+                          // ),
+                          const SizedBox(height: 16),
 
-                            Text(
-                              "Given₹${summary["paid"]!.toStringAsFixed(0)}",
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: summaryTile(
+                                  Icons.grid_view_rounded,
+                                  "Production",
+                                  "${summary["production"]!.toStringAsFixed(0)}",
+                                  const Color(0xff2563EB),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: summaryTile(
+                                  Icons.currency_rupee,
+                                  "Earned",
+                                  "₹${summary["earned"]!.toStringAsFixed(0)}",
+                                  Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
 
-                            Text(
-                              "Return₹${summary["returned"]!.toStringAsFixed(0)}",
-                            ),
-                          ],
-                        ),
+                          const SizedBox(height: 12),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: summaryTile(
+                                  Icons.payments,
+                                  "Paid",
+                                  "₹${summary["paid"]!.toStringAsFixed(0)}",
+                                  Colors.orange,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: summaryTile(
+                                  Icons.reply,
+                                  "Returned",
+                                  "₹${summary["returned"]!.toStringAsFixed(0)}",
+                                  Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
+
                     Expanded(
                       child: ListView.builder(
                         itemCount: filtered.length,
@@ -298,58 +479,153 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
                               );
                             },
 
-                            child: Card(
+                            child: Container(
                               margin: const EdgeInsets.symmetric(
-                                horizontal: 15,
+                                horizontal: 16,
                                 vertical: 8,
                               ),
-                              child: ListTile(
-                                leading: const CircleAvatar(
-                                  child: Icon(Icons.factory),
-                                ),
-
-                                title: Text(
-                                  production.workerName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x11000000),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
                                   ),
-                                ),
-
-                                subtitle: Column(
+                                ],
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AddProductionScreen(
+                                        factory: widget.factory,
+                                        production: production,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Text(
-                                    //   "Rate : ₹${production.ratePer1000.toStringAsFixed(0)} per 1000",
-                                    // ),
-                                    Text(
-                                      "Bricks : ${production.bricksProduced}",
-                                    ),
-                                    Text(
-                                      "📅 ${DateFormat('dd MMM yyyy').format(production.productionDate.toDate())}",
-                                    ),
-                                    Text("Remarks : ${production.remarks}"),
-                                    Text(
-                                      "Salary : ₹${production.salaryEarned.toStringAsFixed(0)} | Paid : ₹${production.salaryPaid.toStringAsFixed(0)} | Cash Returned : ₹${production.cashReturned.toStringAsFixed(0)}",
-                                    ),
-                                  ],
-                                ),
+                                    /// Date + Edit
+                                    Row(
+                                      children: [
+                                        Text(
+                                          DateFormat("dd MMM yyyy").format(
+                                            production.productionDate.toDate(),
+                                          ),
+                                          style: const TextStyle(
+                                            fontFamily: "Poppins",
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
 
-                                trailing: IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.blue,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => AddProductionScreen(
-                                          factory: widget.factory,
-                                          production: production,
+                                        const Spacer(),
+
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    AddProductionScreen(
+                                                      factory: widget.factory,
+                                                      production: production,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            color: Color(0xff2563EB),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 8),
+
+                                    Text(
+                                      production.workerName,
+                                      style: const TextStyle(
+                                        fontFamily: "Poppins",
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 10),
+
+                                    Text(
+                                      "${production.bricksProduced.toStringAsFixed(0)} Bricks",
+                                      style: const TextStyle(
+                                        fontFamily: "Poppins",
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 14),
+
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _infoTile(
+                                            "Salary",
+                                            "₹${production.salaryEarned.toStringAsFixed(0)}",
+                                          ),
+                                        ),
+
+                                        Expanded(
+                                          child: _infoTile(
+                                            "Paid",
+                                            "₹${production.salaryPaid.toStringAsFixed(0)}",
+                                          ),
+                                        ),
+
+                                        Expanded(
+                                          child: _infoTile(
+                                            "Returned",
+                                            "₹${production.cashReturned.toStringAsFixed(0)}",
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (production.remarks.isNotEmpty) ...[
+                                      const SizedBox(height: 14),
+
+                                      const Divider(),
+
+                                      const SizedBox(height: 8),
+
+                                      const Text(
+                                        "Remarks",
+                                        style: TextStyle(
+                                          fontFamily: "Poppins",
+                                          color: Colors.grey,
+                                          fontSize: 13,
                                         ),
                                       ),
-                                    );
-                                  },
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        production.remarks,
+                                        style: const TextStyle(
+                                          fontFamily: "Poppins",
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ),

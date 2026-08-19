@@ -3,6 +3,7 @@ import 'package:bricks_application/models/factory_model.dart';
 import 'package:bricks_application/models/sale_model.dart';
 import 'package:bricks_application/repositories/sale_repository.dart';
 import 'package:bricks_application/screens/sale/add_sale_screen.dart';
+import 'package:bricks_application/services/invoice_service.dart';
 import 'package:flutter/material.dart';
 
 class SaleListScreen extends StatefulWidget {
@@ -212,7 +213,14 @@ class _SaleListScreenState extends State<SaleListScreen> {
         ),
 
         trailing: PopupMenuButton<String>(
-          onSelected: (value) {
+          onSelected: (value) async {
+            // if (value == "pdf") {
+            //   await InvoiceService.generateInvoice(
+            //     factory: widget.factory,
+            //     customer: widget.customer,
+            //     sale: sale,
+            //   );
+            // }
             if (value == "edit") {
               Navigator.push(
                 context,
@@ -231,15 +239,26 @@ class _SaleListScreenState extends State<SaleListScreen> {
             }
           },
 
-          itemBuilder: (_) => const [
-            PopupMenuItem(
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: "pdf",
+              child: Row(
+                children: [
+                  Icon(Icons.picture_as_pdf, color: Colors.red),
+                  SizedBox(width: 10),
+                  Text("Download Invoice"),
+                ],
+              ),
+            ),
+
+            const PopupMenuItem(
               value: "edit",
               child: Row(
                 children: [Icon(Icons.edit), SizedBox(width: 10), Text("Edit")],
               ),
             ),
 
-            PopupMenuItem(
+            const PopupMenuItem(
               value: "delete",
               child: Row(
                 children: [

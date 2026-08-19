@@ -52,7 +52,18 @@ class PaymentHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Payment History"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          "Payment History",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+        centerTitle: true,
+      ),
 
       body: StreamBuilder<List<PaymentModel>>(
         stream: repository.getCustomerPayments(customer.factoryId, customer.id),

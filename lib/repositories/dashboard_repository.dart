@@ -20,29 +20,41 @@ class DashboardRepository {
     late Stream<double> salesStream;
     late Stream<double> collectionStream;
     late Stream<double> salesQuantityStream;
+
     switch (filter) {
       case DashboardFilter.today:
         productionStream = productionRepository.todayProduction(factoryId);
+
         salesStream = saleRepository.todaySales(factoryId);
+
         collectionStream = paymentRepository.todayCollection(factoryId);
-        salesQuantityStream = saleRepository.totalBricksSold(factoryId);
+
+        salesQuantityStream = saleRepository.todayBricksSold(factoryId);
+
         break;
 
       case DashboardFilter.thisWeek:
         productionStream = productionRepository.weekProduction(factoryId);
+
         salesStream = saleRepository.weekSales(factoryId);
+
         collectionStream = paymentRepository.weekCollection(factoryId);
-        salesQuantityStream = saleRepository.totalBricksSold(factoryId);
+
+        salesQuantityStream = saleRepository.weekBricksSold(factoryId);
+
         break;
 
       case DashboardFilter.thisMonth:
         productionStream = productionRepository.monthProduction(factoryId);
+
         salesStream = saleRepository.monthSales(factoryId);
+
         collectionStream = paymentRepository.monthCollection(factoryId);
-        salesQuantityStream = saleRepository.totalBricksSold(factoryId);
+
+        salesQuantityStream = saleRepository.monthBricksSold(factoryId);
+
         break;
 
-      // Temporary
       case DashboardFilter.yesterday:
       case DashboardFilter.lastWeek:
       case DashboardFilter.lastMonth:
@@ -51,8 +63,13 @@ class DashboardRepository {
       case DashboardFilter.thisYear:
       case DashboardFilter.custom:
         productionStream = productionRepository.monthProduction(factoryId);
+
         salesStream = saleRepository.monthSales(factoryId);
+
         collectionStream = paymentRepository.monthCollection(factoryId);
+
+        salesQuantityStream = saleRepository.monthBricksSold(factoryId);
+
         break;
     }
 

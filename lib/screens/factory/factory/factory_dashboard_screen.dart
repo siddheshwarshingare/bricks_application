@@ -12,6 +12,7 @@ import 'package:bricks_application/screens/materials/material_list_screen.dart';
 import 'package:bricks_application/screens/production/production_list_screen.dart';
 import 'package:bricks_application/screens/reports/reports_screen.dart';
 import 'package:bricks_application/screens/sale/sale_list_screen.dart';
+import 'package:bricks_application/screens/sale/select_customer_for_sale_screen.dart';
 import 'package:bricks_application/screens/worker/worker_list_screen.dart';
 import 'package:bricks_application/utils/customer_selector.dart';
 import 'package:flutter/material.dart';
@@ -250,7 +251,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 11),
 
               const Align(
                 alignment: Alignment.centerLeft,
@@ -295,15 +296,29 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                       // );
                     },
                   ),
+                  // QuickActionCard(
+                  //   title: "New Sale",
+                  //   icon: Icons.shopping_cart,
+                  //   color: const Color(0xff2563EB),
+                  //   onTap: () {
+                  //     selectCustomer();
+                  //   },
+                  // ),
                   QuickActionCard(
                     title: "New Sale",
                     icon: Icons.shopping_cart,
                     color: const Color(0xff2563EB),
                     onTap: () {
-                      selectCustomer();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SelectCustomerForSaleScreen(
+                            factory: widget.factory,
+                          ),
+                        ),
+                      );
                     },
                   ),
-
                   menuCard(
                     context,
                     "Receive Payment",
@@ -355,6 +370,59 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                       }
                     },
                   ),
+                  menuCard(
+                    context,
+                    "Sales History",
+                    Icons.history,
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CustomerListScreen(factory: widget.factory),
+                        ),
+                      );
+                    },
+                  ),
+                  // menuCard(
+                  //   context,
+                  //   "Sales History",
+                  //   Icons.history,
+                  //   Colors.green,
+                  //   () async {
+                  //     final customer = await CustomerSelector.show(
+                  //       context,
+                  //       customers,
+                  //     );
+                  //     if (customer != null) {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //           builder: (_) => SaleListScreen(
+                  //             factory: widget.factory,
+                  //             customer: customer,
+                  //           ),
+                  //         ),
+                  //       );
+                  //     }
+                  //   },
+                  // ),
+                  //                   QuickActionCard(
+                  //   title: "Sales History",
+                  //   icon: Icons.receipt_long,
+                  //   color: Colors.indigo,
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) => SaleListScreen(
+                  //           factory: widget.factory, customer:customer ,
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                   //                   QuickActionCard(
                   //                     title: "New Sale",
                   //                     icon: Icons.factory,

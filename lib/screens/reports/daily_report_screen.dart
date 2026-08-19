@@ -7,13 +7,23 @@ class DailyReportScreen extends StatelessWidget {
   final FactoryModel factory;
 
   const DailyReportScreen({super.key, required this.factory});
-
+  static const Color primaryBlue = Color(0xff2563EB);
   @override
   Widget build(BuildContext context) {
     final repository = DailyReportRepository();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Daily Report")),
+      appBar: AppBar(
+        title: const Text(
+          "Daily Report",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: primaryBlue,
+      ),
       body: StreamBuilder<DailyReportModel>(
         stream: repository.getTodayReport(factory.id),
         builder: (context, snapshot) {

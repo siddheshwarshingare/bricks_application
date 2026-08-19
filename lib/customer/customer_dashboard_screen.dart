@@ -234,7 +234,7 @@ class CustomerDashboardScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 11),
 
             const Align(
               alignment: Alignment.centerLeft,

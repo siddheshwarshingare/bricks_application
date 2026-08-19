@@ -3,6 +3,7 @@ import 'package:bricks_application/customer/customer_dashboard_screen.dart';
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/factory_model.dart';
 import 'package:bricks_application/repositories/customer_repository.dart';
+import 'package:bricks_application/services/invoice_service.dart';
 import 'package:flutter/material.dart';
 
 class CustomerListScreen extends StatefulWidget {
@@ -50,10 +51,24 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.factory.name} Customers")),
+      appBar: AppBar(
+        title: Text(
+          "${widget.factory.name} Customers",
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: "Poppins",
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+
+        backgroundColor: const Color(0xff2563EB),
+      ),
 
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xff2563EB),
+        child: const Icon(Icons.add, color: Colors.white, size: 30),
         onPressed: () {
           Navigator.push(
             context,
@@ -154,6 +169,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                       ),
 
                       child: Card(
+                        color: Colors.white,
                         margin: const EdgeInsets.symmetric(
                           horizontal: 15,
                           vertical: 8,
@@ -168,7 +184,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
                           title: Text(
                             customer.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontFamily: "Poppins",
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff111827),
+                            ),
                           ),
 
                           subtitle: Column(
@@ -202,32 +223,72 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                               ),
                             ],
                           ),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (value) async {
+                              if (value == "generate") {
+                                await InvoiceService.downloadCustomerInvoice(
+                                  factory: widget.factory,
+                                  customer: customer,
+                                );
+                              }
 
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AddCustomerScreen(
-                                        factory: widget.factory,
-                                        customer: customer,
-                                      ),
+                              if (value == "send") {
+                                await InvoiceService.shareCustomerInvoice(
+                                  factory: widget.factory,
+                                  customer: customer,
+                                );
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: "generate",
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.red,
                                     ),
-                                  );
-                                },
+                                    SizedBox(width: 10),
+                                    Text("Generate Invoice"),
+                                  ],
+                                ),
                               ),
-
-                              const Icon(Icons.arrow_forward_ios, size: 18),
+                              PopupMenuItem(
+                                value: "send",
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.send, color: Colors.blue),
+                                    SizedBox(width: 10),
+                                    Text("Send Invoice"),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
+                          // trailing: Row(
+                          //   mainAxisSize: MainAxisSize.min,
+                          //   children: [
+                          //     IconButton(
+                          //       icon: const Icon(
+                          //         Icons.edit,
+                          //         color: Colors.blue,
+                          //       ),
+                          //       onPressed: () {
+                          //         Navigator.push(
+                          //           context,
+                          //           MaterialPageRoute(
+                          //             builder: (_) => AddCustomerScreen(
+                          //               factory: widget.factory,
+                          //               customer: customer,
+                          //             ),
+                          //           ),
+                          //         );
+                          //       },
+                          //     ),
 
+                          //     const Icon(Icons.arrow_forward_ios, size: 18),
+                          //   ],
+                          // ),
                           onTap: () {
                             Navigator.push(
                               context,

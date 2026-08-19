@@ -124,7 +124,16 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.worker == null ? "Add Worker" : "Edit Worker"),
+        title: Text(
+          widget.worker == null ? "Add Worker" : "Edit Worker",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+
+        backgroundColor: const Color(0xff2563EB),
       ),
 
       body: Form(

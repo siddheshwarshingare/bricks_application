@@ -1,6 +1,5 @@
 import 'package:bricks_application/main.dart';
 import 'package:bricks_application/screens/factory/factory/factory_list_screen.dart';
-import 'package:bricks_application/screens/worker/worker_list_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {

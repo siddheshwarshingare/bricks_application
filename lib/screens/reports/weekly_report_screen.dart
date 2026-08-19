@@ -12,7 +12,17 @@ class WeeklyReportScreen extends StatelessWidget {
     final repository = WeeklyReportRepository();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Weekly Report")),
+      appBar: AppBar(
+        title: const Text(
+          "Weekly Report",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+      ),
       body: StreamBuilder(
         stream: repository.getWeeklyReport(factory.id),
         builder: (context, snapshot) {

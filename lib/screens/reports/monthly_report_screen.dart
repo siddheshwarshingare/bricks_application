@@ -31,7 +31,17 @@ class MonthlyReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Monthly Report")),
+      appBar: AppBar(
+        title: const Text(
+          "Monthly Report",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        backgroundColor: const Color(0xff2563EB),
+      ),
       body: StreamBuilder<MonthlyReportModel>(
         stream: repository.getMonthlyReport(factory.id),
         builder: (context, snapshot) {
