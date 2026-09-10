@@ -1,7 +1,11 @@
+import 'package:bricks_application/models/expense_model.dart';
+import 'package:bricks_application/models/factory_model.dart';
+import 'package:bricks_application/repositories/material_expense_repository.dart';
+import 'package:bricks_application/screens/materials/add_material_expense_screen.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseScreen extends StatefulWidget {
-  final dynamic factory;
+  final FactoryModel factory;
 
   const ExpenseScreen({super.key, required this.factory});
 
@@ -10,41 +14,9 @@ class ExpenseScreen extends StatefulWidget {
 }
 
 class _ExpenseScreenState extends State<ExpenseScreen> {
+  final MaterialExpenseRepository repository = MaterialExpenseRepository();
+
   String selectedFilter = "Today";
-
-  final List<Map<String, dynamic>> expenses = [
-    {
-      "title": "Diesel",
-      "category": "Fuel",
-      "amount": 2500.0,
-      "date": "10 Sep 2026",
-      "icon": Icons.local_gas_station_rounded,
-      "color": Colors.orange,
-    },
-    {
-      "title": "Cement Purchase",
-      "category": "Materials",
-      "amount": 8500.0,
-      "date": "10 Sep 2026",
-      "icon": Icons.inventory_2_rounded,
-      "color": Colors.blue,
-    },
-    {
-      "title": "Worker Salary",
-      "category": "Salary",
-      "amount": 12000.0,
-      "date": "09 Sep 2026",
-      "icon": Icons.people_alt_rounded,
-      "color": Colors.green,
-    },
-  ];
-
-  double get totalExpense {
-    return expenses.fold(
-      0,
-      (sum, expense) => sum + (expense["amount"] as double),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,83 +28,172 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: const Color(0xff2563EB),
         foregroundColor: Colors.white,
-        title: const Text(
-          "Expenses",
-          style: TextStyle(
-            fontFamily: "Poppins",
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Expenses",
+              style: TextStyle(
+                fontFamily: "Poppins",
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              widget.factory.name,
+              style: TextStyle(
+                fontFamily: "Poppins",
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: .75),
+              ),
+            ),
+          ],
         ),
       ),
 
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xff2563EB),
         foregroundColor: Colors.white,
-        onPressed: _showAddExpenseDialog,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
           "Add Expense",
           style: TextStyle(fontFamily: "Poppins", fontWeight: FontWeight.w600),
         ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddMaterialExpenseScreen(factory: widget.factory),
+            ),
+          );
+        },
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryCard(),
+      body: StreamBuilder<List<MaterialExpenseModel>>(
+        stream: repository.getExpenses(widget.factory.id),
 
-            const SizedBox(height: 20),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            _buildFilter(),
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Error loading expenses\n${snapshot.error}",
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
 
-            const SizedBox(height: 22),
+          final allExpenses = snapshot.data ?? [];
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          final filteredExpenses = _filterExpenses(allExpenses);
+
+          final totalExpense = filteredExpenses.fold<double>(
+            0,
+            (sum, expense) => sum + expense.amount,
+          );
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Expense History",
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xff111827),
-                  ),
+                _buildSummaryCard(totalExpense),
+
+                const SizedBox(height: 20),
+
+                _buildFilter(),
+
+                const SizedBox(height: 22),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Expense History",
+                      style: TextStyle(
+                        fontFamily: "Poppins",
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xff111827),
+                      ),
+                    ),
+
+                    Text(
+                      "${filteredExpenses.length} Expenses",
+                      style: TextStyle(
+                        fontFamily: "Poppins",
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
                 ),
 
-                Text(
-                  "${expenses.length} Expenses",
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
+                const SizedBox(height: 12),
+
+                if (filteredExpenses.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...filteredExpenses.map(
+                    (expense) => _buildExpenseCard(expense),
                   ),
-                ),
+
+                const SizedBox(height: 90),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            if (expenses.isEmpty)
-              _buildEmptyState()
-            else
-              ...expenses.map((expense) => _buildExpenseCard(expense)),
-
-            const SizedBox(height: 90),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   // ------------------------------------------------------------
-  // SUMMARY CARD
+  // FILTER DATA
   // ------------------------------------------------------------
 
-  Widget _buildSummaryCard() {
+  List<MaterialExpenseModel> _filterExpenses(
+    List<MaterialExpenseModel> expenses,
+  ) {
+    final now = DateTime.now();
+
+    if (selectedFilter == "All") {
+      return expenses;
+    }
+
+    return expenses.where((expense) {
+      final date = expense.expenseDate.toDate();
+
+      final expenseDate = DateTime(date.year, date.month, date.day);
+
+      final today = DateTime(now.year, now.month, now.day);
+
+      if (selectedFilter == "Today") {
+        return expenseDate == today;
+      }
+
+      if (selectedFilter == "Week") {
+        final weekStart = today.subtract(Duration(days: today.weekday - 1));
+
+        return !expenseDate.isBefore(weekStart);
+      }
+
+      if (selectedFilter == "Month") {
+        return expenseDate.year == today.year &&
+            expenseDate.month == today.month;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  // ------------------------------------------------------------
+  // SUMMARY
+  // ------------------------------------------------------------
+
+  Widget _buildSummaryCard(double totalExpense) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -172,9 +233,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
               const SizedBox(width: 12),
 
-              const Text(
-                "Total Expenses",
-                style: TextStyle(
+              Text(
+                "$selectedFilter Expenses",
+                style: const TextStyle(
                   fontFamily: "Poppins",
                   fontSize: 13,
                   color: Colors.white70,
@@ -269,8 +330,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   // EXPENSE CARD
   // ------------------------------------------------------------
 
-  Widget _buildExpenseCard(Map<String, dynamic> expense) {
-    final Color color = expense["color"] as Color;
+  Widget _buildExpenseCard(MaterialExpenseModel expense) {
+    final date = expense.expenseDate.toDate();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -293,10 +354,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             height: 48,
             width: 48,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: .10),
+              color: Colors.red.withValues(alpha: .10),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(expense["icon"] as IconData, color: color, size: 23),
+            child: const Icon(
+              Icons.receipt_long_rounded,
+              color: Colors.red,
+              size: 23,
+            ),
           ),
 
           const SizedBox(width: 13),
@@ -306,7 +371,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  expense["title"],
+                  expense.materialName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: "Poppins",
                     fontSize: 14,
@@ -315,34 +382,20 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
 
                 Row(
                   children: [
-                    Text(
-                      expense["category"],
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: 10,
-                        color: Colors.grey.shade500,
-                      ),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 12,
+                      color: Colors.grey.shade500,
                     ),
 
-                    const SizedBox(width: 6),
-
-                    Container(
-                      height: 3,
-                      width: 3,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
 
                     Text(
-                      expense["date"],
+                      "${date.day}/${date.month}/${date.year}",
                       style: TextStyle(
                         fontFamily: "Poppins",
                         fontSize: 10,
@@ -351,21 +404,132 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     ),
                   ],
                 ),
+
+                if (expense.note.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    expense.note,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: "Poppins",
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-          Text(
-            "- ₹${(expense["amount"] as double).toStringAsFixed(2)}",
-            style: const TextStyle(
-              fontFamily: "Poppins",
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color(0xffDC2626),
-            ),
+          const SizedBox(width: 8),
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "- ₹${expense.amount.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontFamily: "Poppins",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xffDC2626),
+                ),
+              ),
+
+              PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.more_vert, color: Colors.grey.shade500),
+                onSelected: (value) {
+                  if (value == "edit") {
+                    _editExpense(expense);
+                  } else if (value == "delete") {
+                    _deleteExpense(expense);
+                  }
+                },
+                itemBuilder: (context) {
+                  return const [
+                    PopupMenuItem(
+                      value: "edit",
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 10),
+                          Text("Edit"),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: "delete",
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red, size: 18),
+                          SizedBox(width: 10),
+                          Text("Delete", style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ];
+                },
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // EDIT
+  // ------------------------------------------------------------
+
+  void _editExpense(MaterialExpenseModel expense) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            AddMaterialExpenseScreen(factory: widget.factory, expense: expense),
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // DELETE
+  // ------------------------------------------------------------
+
+  Future<void> _deleteExpense(MaterialExpenseModel expense) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete Expense"),
+          content: Text("Delete ${expense.materialName} expense?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    await repository.deleteExpense(widget.factory.id, expense.id);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Expense deleted successfully")),
     );
   }
 
@@ -407,7 +571,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           const SizedBox(height: 5),
 
           Text(
-            "Add your first factory expense",
+            "No expenses found for $selectedFilter",
             style: TextStyle(
               fontFamily: "Poppins",
               fontSize: 11,
@@ -416,182 +580,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  // ------------------------------------------------------------
-  // ADD EXPENSE
-  // ------------------------------------------------------------
-
-  void _showAddExpenseDialog() {
-    final titleController = TextEditingController();
-    final amountController = TextEditingController();
-
-    String category = "Other";
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      height: 4,
-                      width: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    "Add Expense",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  TextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: "Expense Name",
-                      prefixIcon: const Icon(Icons.receipt_long_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Amount",
-                      prefixIcon: const Icon(Icons.currency_rupee_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  DropdownButtonFormField<String>(
-                    value: category,
-                    decoration: InputDecoration(
-                      labelText: "Category",
-                      prefixIcon: const Icon(Icons.category_rounded),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: "Fuel", child: Text("Fuel")),
-                      DropdownMenuItem(
-                        value: "Materials",
-                        child: Text("Materials"),
-                      ),
-                      DropdownMenuItem(value: "Salary", child: Text("Salary")),
-                      DropdownMenuItem(
-                        value: "Electricity",
-                        child: Text("Electricity"),
-                      ),
-                      DropdownMenuItem(
-                        value: "Transport",
-                        child: Text("Transport"),
-                      ),
-                      DropdownMenuItem(
-                        value: "Maintenance",
-                        child: Text("Maintenance"),
-                      ),
-                      DropdownMenuItem(value: "Other", child: Text("Other")),
-                    ],
-                    onChanged: (value) {
-                      setModalState(() {
-                        category = value!;
-                      });
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff2563EB),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      onPressed: () {
-                        if (titleController.text.trim().isEmpty ||
-                            amountController.text.trim().isEmpty) {
-                          return;
-                        }
-
-                        final amount = double.tryParse(amountController.text);
-
-                        if (amount == null || amount <= 0) {
-                          return;
-                        }
-
-                        setState(() {
-                          expenses.insert(0, {
-                            "title": titleController.text.trim(),
-                            "category": category,
-                            "amount": amount,
-                            "date": "10 Sep 2026",
-                            "icon": Icons.receipt_long_rounded,
-                            "color": Colors.red,
-                          });
-                        });
-
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        "Save Expense",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

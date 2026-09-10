@@ -1,4 +1,5 @@
 import 'package:bricks_application/home_screen.dart';
+import 'package:bricks_application/screens/factory/factory/factory_list_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -162,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const HomeScreen(),
+                                      builder: (_) => const FactoryListScreen(),
                                     ),
                                   );
                                 }
