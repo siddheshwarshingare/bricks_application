@@ -139,7 +139,7 @@ class _PayWorkerScreenState extends State<PayWorkerScreen> {
               const SizedBox(height: 15),
 
               DropdownButtonFormField<String>(
-                value: paymentMethod,
+                initialValue: paymentMethod,
                 decoration: const InputDecoration(
                   labelText: "Payment Method",
                   border: OutlineInputBorder(),

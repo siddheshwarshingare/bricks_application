@@ -7,7 +7,7 @@ class FactoryRepository {
   Future<void> addFactory(FactoryModel factory) async {
     await _firestore.collection('factories').add(factory.toMap());
   }
-
+ 
   Stream<List<FactoryModel>> getFactories() {
     return FirebaseFirestore.instance
         .collection('factories')

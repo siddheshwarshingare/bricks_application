@@ -279,7 +279,7 @@ class _SaleListScreenState extends State<SaleListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 15),
 
       child: DropdownButtonFormField<String>(
-        value: filter,
+        initialValue: filter,
 
         decoration: InputDecoration(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),

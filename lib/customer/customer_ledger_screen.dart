@@ -146,7 +146,7 @@ class CustomerLedgerScreen extends StatelessWidget {
                                   CircleAvatar(
                                     backgroundColor: getColor(
                                       item.type,
-                                    ).withOpacity(.15),
+                                    ).withValues(alpha: .15),
                                     child: Icon(
                                       getIcon(item.type),
                                       color: getColor(item.type),

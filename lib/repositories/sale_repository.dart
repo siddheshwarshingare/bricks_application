@@ -28,6 +28,88 @@ class SaleRepository {
         });
   }
 
+  /// Today's Pending Sales
+  Stream<double> todayPending(String factoryId) {
+    final now = DateTime.now();
+
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+
+    return _firestore
+        .collection('factories')
+        .doc(factoryId)
+        .collection('sales')
+        .where('saleDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('saleDate', isLessThan: Timestamp.fromDate(end))
+        .snapshots()
+        .map((snapshot) {
+          double total = 0;
+
+          for (final doc in snapshot.docs) {
+            total += (doc.data()['pendingAmount'] ?? 0).toDouble();
+          }
+
+          return total;
+        });
+  }
+
+  /// This Week's Pending Sales
+  Stream<double> weekPending(String factoryId) {
+    final now = DateTime.now();
+
+    final start = now.subtract(Duration(days: now.weekday - 1));
+
+    final weekStart = DateTime(start.year, start.month, start.day);
+
+    final weekEnd = weekStart.add(const Duration(days: 7));
+
+    return _firestore
+        .collection('factories')
+        .doc(factoryId)
+        .collection('sales')
+        .where(
+          'saleDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart),
+        )
+        .where('saleDate', isLessThan: Timestamp.fromDate(weekEnd))
+        .snapshots()
+        .map((snapshot) {
+          double total = 0;
+
+          for (final doc in snapshot.docs) {
+            total += (doc.data()['pendingAmount'] ?? 0).toDouble();
+          }
+
+          return total;
+        });
+  }
+
+  /// This Month's Pending Sales
+  Stream<double> monthPending(String factoryId) {
+    final now = DateTime.now();
+
+    final start = DateTime(now.year, now.month, 1);
+
+    final end = DateTime(now.year, now.month + 1, 1);
+
+    return _firestore
+        .collection('factories')
+        .doc(factoryId)
+        .collection('sales')
+        .where('saleDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('saleDate', isLessThan: Timestamp.fromDate(end))
+        .snapshots()
+        .map((snapshot) {
+          double total = 0;
+
+          for (final doc in snapshot.docs) {
+            total += (doc.data()['pendingAmount'] ?? 0).toDouble();
+          }
+
+          return total;
+        });
+  }
+
   /// ===========================
   /// Add Sale
   /// ===========================
@@ -103,16 +185,13 @@ class SaleRepository {
     required SaleModel sale,
     required CustomerModel customer,
     required double amount,
+    required DateTime paymentDate,
     String paymentMethod = "Cash",
     String referenceNumber = "",
     String remarks = "",
   }) async {
     if (amount <= 0) {
       throw Exception("Payment amount must be greater than 0");
-    }
-
-    if (amount > sale.pendingAmount) {
-      throw Exception("Payment cannot be greater than pending amount");
     }
 
     final saleRef = _firestore
@@ -134,7 +213,6 @@ class SaleRepository {
         .doc();
 
     await _firestore.runTransaction((transaction) async {
-      // Read current values from Firestore
       final saleSnapshot = await transaction.get(saleRef);
       final customerSnapshot = await transaction.get(customerRef);
 
@@ -150,53 +228,49 @@ class SaleRepository {
       final customerData = customerSnapshot.data() as Map<String, dynamic>;
 
       final currentPaid = (saleData['paidAmount'] ?? 0).toDouble();
-
       final totalAmount = (saleData['totalAmount'] ?? 0).toDouble();
+      final currentPending = (saleData['pendingAmount'] ?? 0).toDouble();
+
+      if (amount > currentPending) {
+        throw Exception(
+          "Payment cannot exceed sale pending amount of ₹$currentPending",
+        );
+      }
 
       final newPaid = currentPaid + amount;
-
       final newPending = totalAmount - newPaid;
-
-      // --------------------------------
-      // 1. UPDATE SALE
-      // --------------------------------
 
       transaction.update(saleRef, {
         'paidAmount': newPaid,
         'pendingAmount': newPending < 0 ? 0 : newPending,
       });
 
-      // --------------------------------
-      // 2. ADD PAYMENT RECORD
-      // --------------------------------
-
       transaction.set(paymentRef, {
-        'customerId': sale.customerId,
-        'customerName': sale.customerName,
+        'customerId': customer.id,
+        'customerName': customer.name,
         'factoryId': sale.factoryId,
         'saleId': sale.id,
         'amount': amount,
         'paymentMethod': paymentMethod,
         'referenceNumber': referenceNumber,
         'remarks': remarks,
-        'paymentDate': Timestamp.now(),
+        'paymentDate': Timestamp.fromDate(paymentDate),
         'createdAt': Timestamp.now(),
       });
 
-      // --------------------------------
-      // 3. UPDATE CUSTOMER
-      // --------------------------------
-
       final currentCustomerPaid = (customerData['totalPaid'] ?? 0).toDouble();
 
-      final currentPendingBalance = (customerData['pendingBalance'] ?? 0)
-          .toDouble();
+      final openingBalance = (customerData['openingBalance'] ?? 0).toDouble();
+
+      final totalPurchase = (customerData['totalPurchase'] ?? 0).toDouble();
+
+      final newTotalPaid = currentCustomerPaid + amount;
+
+      final newPendingBalance = openingBalance + totalPurchase - newTotalPaid;
 
       transaction.update(customerRef, {
-        'totalPaid': currentCustomerPaid + amount,
-        'pendingBalance': currentPendingBalance - amount < 0
-            ? 0
-            : currentPendingBalance - amount,
+        'totalPaid': newTotalPaid,
+        'pendingBalance': newPendingBalance < 0 ? 0 : newPendingBalance,
       });
     });
   }

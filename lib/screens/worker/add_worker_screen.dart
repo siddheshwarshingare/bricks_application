@@ -203,7 +203,7 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
             const SizedBox(height: 15),
 
             DropdownButtonFormField<String>(
-              value: workType,
+              initialValue: workType,
               decoration: const InputDecoration(
                 labelText: "Work Type",
                 border: OutlineInputBorder(),

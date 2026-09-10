@@ -1,4 +1,3 @@
-import 'package:bricks_application/customer/customer_dashboard_screen.dart';
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:flutter/material.dart';
 

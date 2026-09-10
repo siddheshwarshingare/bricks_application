@@ -22,7 +22,7 @@ class QuickActionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: color.withOpacity(.12),
+          color: color.withValues(alpha: .12),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -30,7 +30,7 @@ class QuickActionCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: color.withOpacity(.2),
+              backgroundColor: color.withValues(alpha: .2),
               child: Icon(icon, color: color, size: 30),
             ),
 

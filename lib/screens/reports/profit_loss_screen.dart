@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class ProfitLossScreen extends StatefulWidget {
   final FactoryModel factory;
 
-  ProfitLossScreen({super.key, required this.factory});
+  const ProfitLossScreen({super.key, required this.factory});
 
   @override
   State<ProfitLossScreen> createState() => _ProfitLossScreenState();
@@ -252,7 +252,7 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: color.withOpacity(.15),
+            backgroundColor: color.withValues(alpha: .15),
             child: Icon(icon, color: color),
           ),
 

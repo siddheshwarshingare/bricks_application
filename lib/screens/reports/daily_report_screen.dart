@@ -61,7 +61,7 @@ class DailyReportScreen extends StatelessWidget {
 
                     summaryCard(
                       "Bricks Sold",
-                      "${report.bricksSold.toStringAsFixed(0)}",
+                      report.bricksSold.toStringAsFixed(0),
                       Icons.shopping_cart,
                       Colors.green,
                     ),
@@ -185,7 +185,7 @@ class DailyReportScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: color.withOpacity(.15),
+            backgroundColor: color.withValues(alpha: .15),
             child: Icon(icon, color: color),
           ),
 

@@ -106,7 +106,7 @@ class PaymentHistoryScreen extends StatelessWidget {
                             radius: 24,
                             backgroundColor: getColor(
                               payment.paymentMethod,
-                            ).withOpacity(.15),
+                            ).withValues(alpha: .15),
                             child: Icon(
                               getIcon(payment.paymentMethod),
                               color: getColor(payment.paymentMethod),

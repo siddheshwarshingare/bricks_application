@@ -4,10 +4,13 @@ import 'package:bricks_application/enums/dashboard_filter.dart';
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/dashboard_model.dart';
 import 'package:bricks_application/models/factory_model.dart';
+import 'package:bricks_application/models/sale_model.dart';
 import 'package:bricks_application/payment/payment_history_screen.dart';
 import 'package:bricks_application/payment/receive_payment_screen.dart';
 import 'package:bricks_application/repositories/customer_repository.dart';
 import 'package:bricks_application/repositories/dashboard_repository.dart';
+import 'package:bricks_application/repositories/sale_repository.dart';
+import 'package:bricks_application/screens/factory/factory/factory_details_screen.dart';
 import 'package:bricks_application/screens/materials/material_list_screen.dart';
 import 'package:bricks_application/screens/production/production_list_screen.dart';
 import 'package:bricks_application/screens/reports/reports_screen.dart';
@@ -20,13 +23,16 @@ import 'package:flutter/material.dart';
 class FactoryDashboardScreen extends StatefulWidget {
   final FactoryModel factory;
 
-  FactoryDashboardScreen({super.key, required this.factory});
+  const FactoryDashboardScreen({super.key, required this.factory});
 
   @override
   State<FactoryDashboardScreen> createState() => _FactoryDashboardScreenState();
 }
 
 class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
+  final SaleRepository saleRepository = SaleRepository();
+  int _selectedIndex = 0;
+
   final DashboardRepository dashboardRepository = DashboardRepository();
   DashboardFilter selectedFilter = DashboardFilter.today;
   final CustomerRepository customerRepository = CustomerRepository();
@@ -40,7 +46,6 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
     });
   }
 
-  List<CustomerModel> customers = [];
   Widget menuCard(
     BuildContext context,
     String title,
@@ -48,65 +53,276 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
     Color color,
     VoidCallback onTap,
   ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withOpacity(.10),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: color.withOpacity(.20),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      elevation: 0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: color.withValues(alpha: .08),
+        highlightColor: color.withValues(alpha: .04),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade100),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .035),
+                blurRadius: 15,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                height: 41,
+                width: 41,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+
+              const SizedBox(height: 11),
+
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: "Poppins",
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xff1F2937),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.factory.name,
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-        ),
-
-        const SizedBox(height: 8),
-
-        Row(
-          children: [
-            const Icon(Icons.location_on, size: 18, color: Colors.grey),
-
-            const SizedBox(width: 5),
-
-            Expanded(
-              child: Text(
-                widget.factory.location,
-                style: const TextStyle(color: Colors.grey),
+  Widget buildDashboardCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      height: 20,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .035),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                height: 11,
+                width: 11,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Icon(icon, color: color, size: 11),
               ),
+
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: Colors.grey.shade300,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          //  const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: "Poppins",
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff111827),
             ),
+          ),
 
-            const Icon(Icons.person, size: 18, color: Colors.grey),
+          const SizedBox(height: 4),
 
-            const SizedBox(width: 5),
-
-            Text(
-              widget.factory.owner,
-              style: const TextStyle(color: Colors.grey),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: "Poppins",
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade500,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<CustomerModel> customers = [];
+  // Widget menuCard(
+  //   BuildContext context,
+  //   String title,
+  //   IconData icon,
+  //   Color color,
+  //   VoidCallback onTap,
+  // ) {
+  //   return InkWell(
+  //     onTap: onTap,
+  //     borderRadius: BorderRadius.circular(18),
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: color.withOpacity(.10),
+  //         borderRadius: BorderRadius.circular(18),
+  //       ),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           CircleAvatar(
+  //             radius: 28,
+  //             backgroundColor: color.withOpacity(.20),
+  //             child: Icon(icon, color: color, size: 28),
+  //           ),
+  //           const SizedBox(height: 10),
+  //           Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  Widget buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff2563EB), Color(0xff3B82F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ],
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff2563EB).withValues(alpha: .20),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .15),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.factory_rounded,
+                  color: Colors.white,
+                  size: 25,
+                ),
+              ),
+
+              const SizedBox(width: 13),
+
+              Expanded(
+                child: Text(
+                  widget.factory.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: "Poppins",
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(height: 1, color: Colors.white.withValues(alpha: .15)),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 17,
+                color: Colors.white70,
+              ),
+
+              const SizedBox(width: 6),
+
+              Expanded(
+                child: Text(
+                  widget.factory.location,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: "Poppins",
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              const Icon(Icons.person_outline, size: 17, color: Colors.white70),
+
+              const SizedBox(width: 5),
+
+              Flexible(
+                child: Text(
+                  widget.factory.owner,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: "Poppins",
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -163,24 +379,207 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
     }
   }
 
+  Future<void> _receivePayment() async {
+    // 1. Select customer
+    final customer = await CustomerSelector.show(context, customers);
+
+    if (customer == null || !mounted) return;
+
+    // 2. Get customer's sales
+    final sales = await saleRepository
+        .getCustomerSales(widget.factory.id, customer.id)
+        .first;
+
+    // 3. Get only pending sales
+    final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
+
+    if (!mounted) return;
+
+    // 4. No pending sales
+    if (pendingSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("This customer has no pending sales.")),
+      );
+      return;
+    }
+
+    // 5. Select pending sale
+    final SaleModel? selectedSale = await showDialog<SaleModel>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Select Pending Sale"),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 350,
+            child: ListView.builder(
+              itemCount: pendingSales.length,
+              itemBuilder: (context, index) {
+                final sale = pendingSales[index];
+
+                return ListTile(
+                  leading: const Icon(Icons.receipt_long, color: Colors.blue),
+                  title: Text("₹ ${sale.totalAmount.toStringAsFixed(2)}"),
+                  subtitle: Text(
+                    "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
+                  ),
+                  trailing: Text(
+                    sale.brickType,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () {
+                    Navigator.pop(dialogContext, sale);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedSale == null || !mounted) return;
+
+    // 6. Navigate to ReceivePaymentScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ReceivePaymentScreen(customer: customer, sale: selectedSale),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
 
       appBar: AppBar(
-        title: Text(
-          widget.factory.name,
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: "Poppins",
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-
+        elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: const Color(0xff2563EB),
+        centerTitle: false,
+        titleSpacing: 20,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Factory Dashboard",
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: "Poppins",
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              widget.factory.name,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: .75),
+                fontFamily: "Poppins",
+                fontSize: 11,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            height: 40,
+            width: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) async {
+          setState(() {
+            _selectedIndex = index;
+          });
+          switch (index) {
+            case 0:
+              // Dashboard
+              break;
+
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProductionListScreen(factory: widget.factory),
+                ),
+              );
+              break;
+
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SelectCustomerForSaleScreen(factory: widget.factory),
+                ),
+              );
+              break;
+
+            case 3:
+              await _receivePayment();
+              break;
+
+            case 4:
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      FactoryManagementScreen(factory: widget.factory),
+                ),
+              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (_) => ReportsScreen(factory: widget.factory),
+              //   ),
+              // );
+              // More
+              break;
+          }
+        },
+
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.factory_outlined),
+            selectedIcon: Icon(Icons.factory),
+            label: 'Production',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shopping_cart_outlined),
+            selectedIcon: Icon(Icons.shopping_cart),
+            label: 'Sales',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.payments_outlined),
+            selectedIcon: Icon(Icons.payments),
+            label: 'Payments',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.more_horiz),
+            selectedIcon: Icon(Icons.more_horiz),
+            label: 'More',
+          ),
+        ],
       ),
 
       body: SingleChildScrollView(
@@ -211,39 +610,40 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
-                    childAspectRatio: 1.2,
+                    crossAxisSpacing: 11,
+                    mainAxisSpacing: 11,
+                    childAspectRatio: 1.6,
                     children: [
                       buildDashboardCard(
+                        "Production",
                         "${data.production.toStringAsFixed(0)} Bricks",
-                        "Production(This Week)",
                         Icons.factory,
                         Colors.orange,
                       ),
+
                       buildDashboardCard(
-                        "${data.salesQuantity.toStringAsFixed(0)}",
                         "Bricks Sold",
-                        Icons.shopping_cart,
+                        data.salesQuantity.toStringAsFixed(0),
+                        Icons.shopping_cart_rounded,
                         Colors.green,
                       ),
                       buildDashboardCard(
-                        "₹${data.sales.toStringAsFixed(0)}",
                         "Sales",
-                        Icons.currency_rupee,
+                        "₹${data.sales.toStringAsFixed(0)}",
+                        Icons.currency_rupee_rounded,
                         Colors.green,
                       ),
 
                       buildDashboardCard(
-                        "₹${data.collection.toStringAsFixed(0)}",
                         "Collection",
-                        Icons.payments,
+                        "₹${data.collection.toStringAsFixed(0)}",
+                        Icons.payments_rounded,
                         Colors.blue,
                       ),
 
                       buildDashboardCard(
-                        "₹${data.pending.toStringAsFixed(0)}",
                         "Pending",
+                        "₹${data.pending.toStringAsFixed(0)}",
                         Icons.account_balance_wallet,
                         Colors.red,
                       ),
@@ -259,43 +659,57 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                   "Quick Actions",
                   style: TextStyle(
                     fontFamily: "Poppins",
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Color(0xff111827),
                   ),
                 ),
               ),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.only(top: 3),
+                  child: Text(
+                    "Manage your factory quickly",
+                    style: TextStyle(
+                      fontFamily: "Poppins",
+                      fontSize: 12,
+                      color: Color(0xff9CA3AF),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 11),
 
-              const SizedBox(height: 15),
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 mainAxisSpacing: 15,
                 crossAxisSpacing: 15,
-                childAspectRatio: 1.3,
+                childAspectRatio: 1.6,
                 children: [
-                  QuickActionCard(
-                    title: "Production",
-                    icon: Icons.factory,
-                    color: Colors.orange,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ProductionListScreen(factory: widget.factory),
-                        ),
-                      );
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (_) =>
-                      //         AddProductionScreen(factory: widget.factory),
-                      //   ),
-                      // );
-                    },
-                  ),
+                  // QuickActionCard(
+                  //   title: "Production",
+                  //   icon: Icons.factory,
+                  //   color: Colors.orange,
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) =>
+                  //             ProductionListScreen(factory: widget.factory),
+                  //       ),
+                  //     );
+                  //     // Navigator.push(
+                  //     //   context,
+                  //     //   MaterialPageRoute(
+                  //     //     builder: (_) =>
+                  //     //         AddProductionScreen(factory: widget.factory),
+                  //     //   ),
+                  //     // );
+                  //   },
+                  // ),
                   // QuickActionCard(
                   //   title: "New Sale",
                   //   icon: Icons.shopping_cart,
@@ -304,11 +718,44 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                   //     selectCustomer();
                   //   },
                   // ),
-                  QuickActionCard(
-                    title: "New Sale",
-                    icon: Icons.shopping_cart,
-                    color: const Color(0xff2563EB),
-                    onTap: () {
+                  // QuickActionCard(
+                  //   title: "New Sale",
+                  //   icon: Icons.shopping_cart,
+                  //   color: const Color(0xff2563EB),
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) => SelectCustomerForSaleScreen(
+                  //           factory: widget.factory,
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
+
+                  menuCard(
+                    context,
+                    "Production",
+                    Icons.history,
+                    Colors.green,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ProductionListScreen(factory: widget.factory),
+                        ),
+                      );
+                    },
+                  ),
+                  menuCard(
+                    context,
+                    "New Sale",
+                    Icons.factory,
+                    //   color: Colors.orange,
+                    Colors.green,
+                    () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -325,51 +772,186 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                     Icons.payments,
                     Colors.blue,
                     () async {
+                      // 1. Select customer
                       final customer = await CustomerSelector.show(
                         context,
                         customers,
                       );
 
-                      if (customer != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ReceivePaymentScreen(customer: customer),
+                      if (customer == null || !mounted) return;
+
+                      // 2. Get customer's sales
+                      final sales = await saleRepository
+                          .getCustomerSales(widget.factory.id, customer.id)
+                          .first;
+
+                      // 3. Get only sales with pending amount
+                      final pendingSales = sales
+                          .where((sale) => sale.pendingAmount > 0)
+                          .toList();
+
+                      if (!mounted) return;
+
+                      // 4. No pending sales
+                      if (pendingSales.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "This customer has no pending sales.",
+                            ),
                           ),
                         );
+                        return;
                       }
 
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (_) =>
-                      //         ReceivePaymentScreen(customer: customer),
-                      //   ),
-                      // );
+                      // 5. Select pending sale
+                      final SaleModel?
+                      selectedSale = await showDialog<SaleModel>(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            title: const Text("Select Pending Sale"),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              height: 350,
+                              child: ListView.builder(
+                                itemCount: pendingSales.length,
+                                itemBuilder: (context, index) {
+                                  final sale = pendingSales[index];
+
+                                  return ListTile(
+                                    leading: const Icon(
+                                      Icons.receipt_long,
+                                      color: Colors.blue,
+                                    ),
+                                    title: Text(
+                                      "₹ ${sale.totalAmount.toStringAsFixed(2)}",
+                                    ),
+                                    subtitle: Text(
+                                      "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
+                                    ),
+                                    trailing: Text(
+                                      sale.brickType,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(dialogContext, sale);
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+
+                      // 6. User cancelled
+                      if (selectedSale == null || !mounted) return;
+
+                      // 7. Open Receive Payment
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ReceivePaymentScreen(
+                            customer: customer,
+                            sale: selectedSale,
+                          ),
+                        ),
+                      );
                     },
                   ),
+
                   menuCard(
                     context,
-                    "Payment History",
-                    Icons.history,
-                    Colors.green,
+                    "Receive Payment",
+                    Icons.payments,
+                    Colors.blue,
                     () async {
+                      // 1. Select customer
                       final customer = await CustomerSelector.show(
                         context,
                         customers,
                       );
-                      if (customer != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                PaymentHistoryScreen(customer: customer),
+
+                      if (customer == null) return;
+
+                      // 2. Get customer's sales
+                      final sales = await saleRepository
+                          .getCustomerSales(widget.factory.id, customer.id)
+                          .first;
+
+                      // 3. Only show sales that still have pending amount
+                      final pendingSales = sales
+                          .where((sale) => sale.pendingAmount > 0)
+                          .toList();
+
+                      if (!mounted) return;
+
+                      // 4. No pending sales
+                      if (pendingSales.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "This customer has no pending sales.",
+                            ),
                           ),
                         );
+                        return;
                       }
+
+                      // 5. Select pending sale
+                      final SaleModel?
+                      selectedSale = await showDialog<SaleModel>(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text("Select Pending Sale"),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              height: 350,
+                              child: ListView.builder(
+                                itemCount: pendingSales.length,
+                                itemBuilder: (context, index) {
+                                  final sale = pendingSales[index];
+
+                                  return ListTile(
+                                    leading: const Icon(Icons.receipt_long),
+                                    title: Text(
+                                      "₹ ${sale.totalAmount.toStringAsFixed(2)}",
+                                    ),
+                                    subtitle: Text(
+                                      "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
+                                    ),
+                                    trailing: Text(sale.brickType),
+                                    onTap: () {
+                                      Navigator.pop(context, sale);
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+
+                      // 6. User cancelled sale selection
+                      if (selectedSale == null || !mounted) return;
+
+                      // 7. Open Receive Payment with customer + sale
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ReceivePaymentScreen(
+                            customer: customer,
+                            sale: selectedSale,
+                          ),
+                        ),
+                      );
                     },
                   ),
+
                   menuCard(
                     context,
                     "Sales History",
@@ -490,7 +1072,36 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                   // Cards here
                 ],
               ),
+              const SizedBox(height: 28),
 
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Factory Management",
+                  style: TextStyle(
+                    fontFamily: "Poppins",
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xff111827),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 3),
+
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Manage your factory operations",
+                  style: TextStyle(
+                    fontFamily: "Poppins",
+                    fontSize: 12,
+                    color: Color(0xff9CA3AF),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -611,76 +1222,113 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
   }
 
   Widget buildDashboardFilter() {
-    return SegmentedButton<DashboardFilter>(
-      segments: const [
-        ButtonSegment<DashboardFilter>(
-          value: DashboardFilter.today,
-          label: Text("Today"),
-          icon: Icon(Icons.today),
-        ),
-        ButtonSegment<DashboardFilter>(
-          value: DashboardFilter.thisWeek,
-          label: const Text("Week"),
-          icon: const Icon(Icons.date_range),
-        ),
-
-        ButtonSegment<DashboardFilter>(
-          value: DashboardFilter.thisMonth,
-          label: const Text("Month"),
-          icon: const Icon(Icons.calendar_month),
-        ),
-      ],
-      selected: {selectedFilter},
-      onSelectionChanged: (Set<DashboardFilter> selection) {
-        setState(() {
-          selectedFilter = selection.first;
-        });
-      },
-      showSelectedIcon: false,
-      style: ButtonStyle(
-        padding: WidgetStateProperty.all(
-          const EdgeInsets.symmetric(vertical: 14),
-        ),
-      ),
-    );
-  }
-
-  Widget buildDashboardCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(.15),
-            child: Icon(icon, color: color),
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 6),
-
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
+      child: SegmentedButton<DashboardFilter>(
+        segments: const [
+          ButtonSegment<DashboardFilter>(
+            value: DashboardFilter.today,
+            label: Text("Today"),
+            icon: Icon(Icons.today_rounded),
+          ),
+          ButtonSegment<DashboardFilter>(
+            value: DashboardFilter.thisWeek,
+            label: Text("Week"),
+            icon: Icon(Icons.date_range_rounded),
+          ),
+          ButtonSegment<DashboardFilter>(
+            value: DashboardFilter.thisMonth,
+            label: Text("Month"),
+            icon: Icon(Icons.calendar_month_rounded),
+          ),
+        ],
+        selected: {selectedFilter},
+        onSelectionChanged: (Set<DashboardFilter> selection) {
+          setState(() {
+            selectedFilter = selection.first;
+          });
+        },
+        showSelectedIcon: false,
+        style: ButtonStyle(
+          elevation: WidgetStateProperty.all(0),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          ),
+          textStyle: WidgetStateProperty.all(
+            const TextStyle(
+              fontFamily: "Poppins",
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return const Color(0xff6B7280);
+          }),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xff2563EB);
+            }
+            return Colors.transparent;
+          }),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          side: WidgetStateProperty.all(BorderSide.none),
+        ),
+      ),
     );
   }
+  // Widget buildDashboardCard(
+  //   String title,
+  //   String value,
+  //   IconData icon,
+  //   Color color,
+  // ) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+  //     ),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         CircleAvatar(
+  //           backgroundColor: color.withOpacity(.15),
+  //           child: Icon(icon, color: color),
+  //         ),
+
+  //         const SizedBox(height: 12),
+
+  //         Text(
+  //           value,
+  //           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+  //         ),
+
+  //         const SizedBox(height: 6),
+
+  //         Text(
+  //           title,
+  //           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

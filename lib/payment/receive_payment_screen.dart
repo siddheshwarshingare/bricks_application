@@ -1,15 +1,16 @@
 import 'package:bricks_application/models/customer_model.dart';
-import 'package:bricks_application/models/payment_model.dart';
 import 'package:bricks_application/models/sale_model.dart';
-import 'package:bricks_application/repositories/payment_repository.dart';
 import 'package:bricks_application/repositories/sale_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ReceivePaymentScreen extends StatefulWidget {
   final CustomerModel customer;
-  final SaleModel? sale;
-  const ReceivePaymentScreen({super.key, required this.customer, this.sale});
+  final SaleModel sale;
+  const ReceivePaymentScreen({
+    super.key,
+    required this.customer,
+    required this.sale,
+  });
 
   @override
   State<ReceivePaymentScreen> createState() => _ReceivePaymentScreenState();
@@ -55,11 +56,20 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
   Future<void> savePayment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final amount = double.parse(amountController.text);
+    final amount = double.tryParse(amountController.text.trim());
 
-    if (amount > widget.customer.pendingBalance) {
+    if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Payment cannot exceed pending amount.")),
+        const SnackBar(content: Text("Enter a valid payment amount.")),
+      );
+      return;
+    }
+
+    if (amount > widget.sale.pendingAmount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Payment cannot exceed sale pending amount."),
+        ),
       );
       return;
     }
@@ -70,9 +80,10 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
 
     try {
       await repository.addPaymentToSale(
-        sale: widget.sale!,
+        sale: widget.sale,
         customer: widget.customer,
         amount: amount,
+        paymentDate: paymentDate,
         paymentMethod: paymentMethod,
         referenceNumber: referenceController.text.trim(),
         remarks: remarksController.text.trim(),
@@ -86,15 +97,66 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
 
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
-
-    setState(() {
-      isLoading = false;
-    });
   }
+
+  // Future<void> savePayment() async {
+  //   if (!_formKey.currentState!.validate()) return;
+
+  //   final amount = double.parse(amountController.text);
+
+  //   if (amount > widget.customer.pendingBalance) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text("Payment cannot exceed pending amount.")),
+  //     );
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   try {
+  //     await repository.addPaymentToSale(
+  //       sale: widget.sale,
+  //       customer: widget.customer,
+  //       amount: amount,
+
+  //       paymentDate: paymentDate,
+
+  //       paymentMethod: paymentMethod,
+  //       referenceNumber: referenceController.text.trim(),
+  //       remarks: remarksController.text.trim(),
+  //     );
+
+  //     if (!mounted) return;
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text("Payment Received Successfully")),
+  //     );
+
+  //     Navigator.pop(context);
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text(e.toString())));
+  //   }
+
+  //   setState(() {
+  //     isLoading = false;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +273,7 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
 
               /// Payment Method
               DropdownButtonFormField<String>(
-                value: paymentMethod,
+                initialValue: paymentMethod,
                 decoration: const InputDecoration(
                   labelText: "Payment Method",
                   border: OutlineInputBorder(),

@@ -97,7 +97,7 @@ class CustomerModel {
       totalPurchase: totalPurchase ?? this.totalPurchase,
       createdAt: createdAt ?? this.createdAt,
       totalPaid: totalPaid ?? this.totalPaid,
-      totalQuantity: totalQuantity ?? this.totalQuantity,
+      totalQuantity: totalQuantity ?? totalQuantity,
     );
   }
 

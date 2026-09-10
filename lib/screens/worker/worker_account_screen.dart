@@ -382,7 +382,7 @@ class WorkerAccountScreen extends StatelessWidget {
 
         children: [
           CircleAvatar(
-            backgroundColor: color.withOpacity(.15),
+            backgroundColor: color.withValues(alpha: .15),
             child: Icon(icon, color: color),
           ),
 

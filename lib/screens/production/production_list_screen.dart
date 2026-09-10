@@ -110,7 +110,7 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(.08),
+        color: color.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -120,7 +120,7 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: color.withOpacity(.15),
+                backgroundColor: color.withValues(alpha: .15),
                 child: Icon(icon, color: color, size: 18),
               ),
               const SizedBox(width: 12),
@@ -370,7 +370,7 @@ class _ProductionListScreenState extends State<ProductionListScreen> {
                                 child: summaryTile(
                                   Icons.grid_view_rounded,
                                   "Production",
-                                  "${summary["production"]!.toStringAsFixed(0)}",
+                                  summary["production"]!.toStringAsFixed(0),
                                   const Color(0xff2563EB),
                                 ),
                               ),

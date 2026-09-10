@@ -135,7 +135,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: DropdownButtonFormField<String>(
-        value: brickType,
+        initialValue: brickType,
         decoration: InputDecoration(
           labelText: "Brick Type",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

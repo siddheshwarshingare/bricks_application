@@ -184,7 +184,7 @@ class _FactoryListScreenState extends State<FactoryListScreen> {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(.12),
+                              color: Colors.grey.withValues(alpha: .12),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -195,7 +195,7 @@ class _FactoryListScreenState extends State<FactoryListScreen> {
                             width: 55,
                             height: 55,
                             decoration: BoxDecoration(
-                              color: const Color(0xff2563EB).withOpacity(.12),
+                              color: const Color(0xff2563EB).withValues(alpha: .12),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(

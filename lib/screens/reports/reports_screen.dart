@@ -148,7 +148,7 @@ class ReportsScreen extends StatelessWidget {
                 height: 62,
 
                 decoration: BoxDecoration(
-                  color: primaryBlue.withOpacity(0.10),
+                  color: primaryBlue.withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
 

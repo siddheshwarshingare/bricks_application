@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
             index = i;
           });
         },
-        indicatorColor: const Color(0xFF1565C0).withOpacity(0.2),
+        indicatorColor: const Color(0xFF1565C0).withValues(alpha: 0.2),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: "Home"),
           NavigationDestination(icon: Icon(Icons.factory), label: "Factories"),

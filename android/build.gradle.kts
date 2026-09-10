@@ -1,21 +1,6 @@
 import org.gradle.api.tasks.Delete
 import org.gradle.api.file.Directory
 
-buildscript {
-    val kotlinVersion by extra("1.6.10")
-
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath("com.android.tools.build:gradle:7.1.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        // classpath("com.google.gms:google-services:4.3.10")
-    }
-}
-
 allprojects {
     repositories {
         google()
@@ -27,10 +12,13 @@ val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
         .get()
+
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    val newSubprojectBuildDir: Directory =
+        newBuildDir.dir(project.name)
+
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 

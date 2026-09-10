@@ -95,7 +95,7 @@ class WeeklyReportScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 15),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(.15),
+          backgroundColor: color.withValues(alpha: .15),
           child: Icon(icon, color: color),
         ),
         title: Text(title),

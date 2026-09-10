@@ -11,7 +11,7 @@ class DashboardRepository {
   final SaleRepository saleRepository = SaleRepository();
   final PaymentRepository paymentRepository = PaymentRepository();
   final CustomerRepository customerRepository = CustomerRepository();
-
+  late Stream<double> pendingStream;
   Stream<DashboardModel> getDashboardData(
     String factoryId,
     DashboardFilter filter,
@@ -31,6 +31,8 @@ class DashboardRepository {
 
         salesQuantityStream = saleRepository.todayBricksSold(factoryId);
 
+        pendingStream = saleRepository.todayPending(factoryId);
+
         break;
 
       case DashboardFilter.thisWeek:
@@ -42,6 +44,8 @@ class DashboardRepository {
 
         salesQuantityStream = saleRepository.weekBricksSold(factoryId);
 
+        pendingStream = saleRepository.weekPending(factoryId);
+
         break;
 
       case DashboardFilter.thisMonth:
@@ -52,6 +56,8 @@ class DashboardRepository {
         collectionStream = paymentRepository.monthCollection(factoryId);
 
         salesQuantityStream = saleRepository.monthBricksSold(factoryId);
+
+        pendingStream = saleRepository.monthPending(factoryId);
 
         break;
 
@@ -70,10 +76,11 @@ class DashboardRepository {
 
         salesQuantityStream = saleRepository.monthBricksSold(factoryId);
 
+        pendingStream = saleRepository.monthPending(factoryId);
+
         break;
     }
-
-    final pendingStream = customerRepository.totalPendingAmount(factoryId);
+    //final pendingStream = customerRepository.totalPendingAmount(factoryId);
 
     final customerStream = customerRepository.totalCustomers(factoryId);
 

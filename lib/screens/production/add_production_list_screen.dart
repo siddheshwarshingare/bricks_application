@@ -183,7 +183,7 @@ class _AddProductionScreenState extends State<AddProductionScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 DropdownButtonFormField<WorkerModel>(
-                  value: selectedWorker,
+                  initialValue: selectedWorker,
                   decoration: const InputDecoration(
                     labelText: "Select Worker",
                     border: OutlineInputBorder(),

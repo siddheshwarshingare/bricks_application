@@ -134,7 +134,7 @@ class ReportDashboardScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: color.withOpacity(.15),
+              backgroundColor: color.withValues(alpha: .15),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 15),

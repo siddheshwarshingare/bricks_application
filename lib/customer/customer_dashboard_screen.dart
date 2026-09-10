@@ -1,21 +1,29 @@
 import 'package:bricks_application/customer/customer_ledger_screen.dart';
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/factory_model.dart';
+import 'package:bricks_application/models/sale_model.dart';
 import 'package:bricks_application/payment/payment_history_screen.dart';
 import 'package:bricks_application/payment/receive_payment_screen.dart';
+import 'package:bricks_application/repositories/sale_repository.dart';
 import 'package:bricks_application/screens/sale/sale_list_screen.dart';
 import 'package:flutter/material.dart';
 
-class CustomerDashboardScreen extends StatelessWidget {
+class CustomerDashboardScreen extends StatefulWidget {
   final FactoryModel factory;
   final CustomerModel customer;
-
-  const CustomerDashboardScreen({
+  final SaleRepository saleRepository = SaleRepository();
+  CustomerDashboardScreen({
     super.key,
     required this.factory,
     required this.customer,
   });
 
+  @override
+  State<CustomerDashboardScreen> createState() =>
+      _CustomerDashboardScreenState();
+}
+
+class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   Widget infoCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -29,7 +37,7 @@ class CustomerDashboardScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: color.withOpacity(.15),
+            backgroundColor: color.withValues(alpha: .15),
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 10),
@@ -40,6 +48,64 @@ class CustomerDashboardScreen extends StatelessWidget {
           const SizedBox(height: 5),
           Text(title, textAlign: TextAlign.center),
         ],
+      ),
+    );
+  }
+
+  Future<void> receivePayment(BuildContext context) async {
+    final sales = await widget.saleRepository
+        .getCustomerSales(widget.factory.id, widget.customer.id)
+        .first;
+
+    final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
+
+    if (!context.mounted) return;
+
+    if (pendingSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("This customer has no pending sales.")),
+      );
+      return;
+    }
+
+    final SaleModel? selectedSale = await showDialog<SaleModel>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Select Pending Sale"),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 350,
+            child: ListView.builder(
+              itemCount: pendingSales.length,
+              itemBuilder: (context, index) {
+                final sale = pendingSales[index];
+
+                return ListTile(
+                  leading: const Icon(Icons.receipt_long),
+                  title: Text("₹ ${sale.totalAmount.toStringAsFixed(2)}"),
+                  subtitle: Text(
+                    "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
+                  ),
+                  trailing: Text(sale.brickType),
+                  onTap: () {
+                    Navigator.pop(dialogContext, sale);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedSale == null || !context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ReceivePaymentScreen(customer: widget.customer, sale: selectedSale),
       ),
     );
   }
@@ -56,7 +122,7 @@ class CustomerDashboardScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(.10),
+          color: color.withValues(alpha: .10),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -64,7 +130,7 @@ class CustomerDashboardScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: color.withOpacity(.20),
+              backgroundColor: color.withValues(alpha: .20),
               child: Icon(icon, color: color, size: 30),
             ),
             const SizedBox(height: 10),
@@ -81,12 +147,13 @@ class CustomerDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paidAmount = customer.totalPurchase - customer.pendingBalance;
+    final paidAmount =
+        widget.customer.totalPurchase - widget.customer.pendingBalance;
 
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
 
-      appBar: AppBar(title: Text(customer.name), centerTitle: true),
+      appBar: AppBar(title: Text(widget.customer.name), centerTitle: true),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -120,7 +187,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          customer.name,
+                          widget.customer.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -137,7 +204,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       const Icon(Icons.phone, color: Colors.white),
                       const SizedBox(width: 10),
                       Text(
-                        customer.mobile,
+                        widget.customer.mobile,
                         style: const TextStyle(color: Colors.white),
                       ),
                     ],
@@ -151,7 +218,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          customer.address,
+                          widget.customer.address,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -166,7 +233,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          customer.village,
+                          widget.customer.village,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -181,9 +248,9 @@ class CustomerDashboardScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          customer.gstNumber.isEmpty
+                          widget.customer.gstNumber.isEmpty
                               ? "Not Available"
-                              : customer.gstNumber,
+                              : widget.customer.gstNumber,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -206,14 +273,14 @@ class CustomerDashboardScreen extends StatelessWidget {
               children: [
                 infoCard(
                   "Total Purchase",
-                  "₹${customer.totalPurchase.toStringAsFixed(0)}",
+                  "₹${widget.customer.totalPurchase.toStringAsFixed(0)}",
                   Icons.shopping_cart,
                   Colors.green,
                 ),
 
                 infoCard(
                   "Pending",
-                  "₹${customer.pendingBalance.toStringAsFixed(0)}",
+                  "₹${widget.customer.pendingBalance.toStringAsFixed(0)}",
                   Icons.pending_actions,
                   Colors.red,
                 ),
@@ -227,7 +294,7 @@ class CustomerDashboardScreen extends StatelessWidget {
 
                 infoCard(
                   "Opening Balance",
-                  "₹${customer.openingBalance.toStringAsFixed(0)}",
+                  "₹${widget.customer.openingBalance.toStringAsFixed(0)}",
                   Icons.account_balance_wallet,
                   Colors.orange,
                 ),
@@ -258,8 +325,10 @@ class CustomerDashboardScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          SaleListScreen(factory: factory, customer: customer),
+                      builder: (_) => SaleListScreen(
+                        factory: widget.factory,
+                        customer: widget.customer,
+                      ),
                     ),
                   );
                 }),
@@ -329,21 +398,31 @@ class CustomerDashboardScreen extends StatelessWidget {
   ),
 ),
  */
+                // menuCard(
+                //   context,
+                //   "Receive Payment",
+                //   Icons.payments,
+                //   Colors.blue,
+                //   () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (_) => ReceivePaymentScreen(
+                //           customer: widget.customer,
+                //           sale: null,
+                //         ),
+                //       ),
+                //     );
+                //   },
+                // ),
                 menuCard(
                   context,
                   "Receive Payment",
                   Icons.payments,
                   Colors.blue,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ReceivePaymentScreen(customer: customer),
-                      ),
-                    );
-                  },
+                  () => receivePayment(context),
                 ),
+
                 menuCard(
                   context,
                   "Payment History",
@@ -354,7 +433,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            PaymentHistoryScreen(customer: customer),
+                            PaymentHistoryScreen(customer: widget.customer),
                       ),
                     );
                   },
@@ -383,7 +462,7 @@ class CustomerDashboardScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            CustomerLedgerScreen(customer: customer),
+                            CustomerLedgerScreen(customer: widget.customer),
                       ),
                     );
                   },
