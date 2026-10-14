@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bricks_application/customer/customer_ledger_screen.dart';
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/factory_model.dart';
@@ -6,6 +8,7 @@ import 'package:bricks_application/payment/payment_history_screen.dart';
 import 'package:bricks_application/payment/receive_payment_screen.dart';
 import 'package:bricks_application/repositories/sale_repository.dart';
 import 'package:bricks_application/screens/sale/sale_list_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
@@ -24,6 +27,133 @@ class CustomerDashboardScreen extends StatefulWidget {
 }
 
 class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
+  late CustomerModel currentCustomer;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+  _customerSubscription;
+  @override
+  void initState() {
+    super.initState();
+
+    currentCustomer = widget.customer;
+
+    _listenToCustomer();
+  }
+
+  void _listenToCustomer() {
+    _customerSubscription = FirebaseFirestore.instance
+        .collection('factories')
+        .doc(widget.factory.id)
+        .collection('customers')
+        .doc(widget.customer.id)
+        .snapshots()
+        .listen((doc) {
+          if (!doc.exists || !mounted) return;
+
+          setState(() {
+            currentCustomer = CustomerModel.fromFirestore(doc);
+          });
+        });
+  }
+
+  @override
+  void dispose() {
+    _customerSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> receivePayment(BuildContext context) async {
+    // 1. Get latest customer from Firestore
+    await _refreshCustomer();
+
+    if (!context.mounted) return;
+
+    // 2. Get latest sales directly from Firestore SERVER
+    final sales = await widget.saleRepository.getCustomerSalesOnce(
+      widget.factory.id,
+      currentCustomer.id,
+    );
+
+    // 3. Only sales which currently have pending amount
+    final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
+
+    if (!context.mounted) return;
+
+    if (pendingSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("This customer has no pending sales.")),
+      );
+      return;
+    }
+
+    // 4. Select pending sale
+    final SaleModel? selectedSale = await showDialog<SaleModel>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Select Pending Sale"),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 350,
+            child: ListView.builder(
+              itemCount: pendingSales.length,
+              itemBuilder: (context, index) {
+                final sale = pendingSales[index];
+
+                return ListTile(
+                  leading: const Icon(Icons.receipt_long, color: Colors.blue),
+
+                  title: Text("Total: ₹${sale.totalAmount.toStringAsFixed(2)}"),
+
+                  subtitle: Text(
+                    "Pending: ₹${sale.pendingAmount.toStringAsFixed(2)}",
+                  ),
+
+                  trailing: Text(
+                    sale.productName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+
+                  onTap: () {
+                    Navigator.pop(dialogContext, sale);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedSale == null || !context.mounted) return;
+
+    // 5. Open payment screen
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ReceivePaymentScreen(customer: currentCustomer, sale: selectedSale),
+      ),
+    );
+
+    // 6. Refresh customer after payment
+    await _refreshCustomer();
+  }
+
+  Future<void> _refreshCustomer() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('factories')
+        .doc(widget.factory.id)
+        .collection('customers')
+        .doc(widget.customer.id)
+        .get();
+
+    if (!doc.exists || !mounted) return;
+
+    setState(() {
+      currentCustomer = CustomerModel.fromFirestore(doc);
+    });
+  }
+
   Widget infoCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -52,63 +182,63 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
     );
   }
 
-  Future<void> receivePayment(BuildContext context) async {
-    final sales = await widget.saleRepository
-        .getCustomerSales(widget.factory.id, widget.customer.id)
-        .first;
+  // Future<void> receivePayment(BuildContext context) async {
+  //   final sales = await widget.saleRepository
+  //       .getCustomerSales(widget.factory.id, widget.customer.id)
+  //       .first;
 
-    final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
+  //   final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
 
-    if (!context.mounted) return;
+  //   if (!context.mounted) return;
 
-    if (pendingSales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("This customer has no pending sales.")),
-      );
-      return;
-    }
+  //   if (pendingSales.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text("This customer has no pending sales.")),
+  //     );
+  //     return;
+  //   }
 
-    final SaleModel? selectedSale = await showDialog<SaleModel>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text("Select Pending Sale"),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 350,
-            child: ListView.builder(
-              itemCount: pendingSales.length,
-              itemBuilder: (context, index) {
-                final sale = pendingSales[index];
+  //   final SaleModel? selectedSale = await showDialog<SaleModel>(
+  //     context: context,
+  //     builder: (dialogContext) {
+  //       return AlertDialog(
+  //         title: const Text("Select Pending Sale"),
+  //         content: SizedBox(
+  //           width: double.maxFinite,
+  //           height: 350,
+  //           child: ListView.builder(
+  //             itemCount: pendingSales.length,
+  //             itemBuilder: (context, index) {
+  //               final sale = pendingSales[index];
 
-                return ListTile(
-                  leading: const Icon(Icons.receipt_long),
-                  title: Text("₹ ${sale.totalAmount.toStringAsFixed(2)}"),
-                  subtitle: Text(
-                    "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
-                  ),
-                  trailing: Text(sale.brickType),
-                  onTap: () {
-                    Navigator.pop(dialogContext, sale);
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
+  //               return ListTile(
+  //                 leading: const Icon(Icons.receipt_long),
+  //                 title: Text("₹ ${sale.totalAmount.toStringAsFixed(2)}"),
+  //                 subtitle: Text(
+  //                   "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
+  //                 ),
+  //                 trailing: Text(sale.productName),
+  //                 onTap: () {
+  //                   Navigator.pop(dialogContext, sale);
+  //                 },
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
 
-    if (selectedSale == null || !context.mounted) return;
+  //   if (selectedSale == null || !context.mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            ReceivePaymentScreen(customer: widget.customer, sale: selectedSale),
-      ),
-    );
-  }
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) =>
+  //           ReceivePaymentScreen(customer: widget.customer, sale: selectedSale),
+  //     ),
+  //   );
+  // }
 
   Widget menuCard(
     BuildContext context,
@@ -147,13 +277,11 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final paidAmount =
-        widget.customer.totalPurchase - widget.customer.pendingBalance;
-
+    final paidAmount = currentCustomer.totalPaid;
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
 
-      appBar: AppBar(title: Text(widget.customer.name), centerTitle: true),
+      appBar: AppBar(title: Text(currentCustomer.name), centerTitle: true),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -187,7 +315,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          widget.customer.name,
+                          currentCustomer.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -218,7 +346,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          widget.customer.address,
+                          currentCustomer.address,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -233,7 +361,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          widget.customer.village,
+                          currentCustomer.village,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -273,28 +401,27 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               children: [
                 infoCard(
                   "Total Purchase",
-                  "₹${widget.customer.totalPurchase.toStringAsFixed(0)}",
+                  "₹${currentCustomer.totalPurchase.toStringAsFixed(0)}",
                   Icons.shopping_cart,
                   Colors.green,
                 ),
 
                 infoCard(
                   "Pending",
-                  "₹${widget.customer.pendingBalance.toStringAsFixed(0)}",
+                  "₹${currentCustomer.pendingBalance.toStringAsFixed(0)}",
                   Icons.pending_actions,
                   Colors.red,
                 ),
-
                 infoCard(
                   "Paid",
-                  "₹${paidAmount.toStringAsFixed(0)}",
+                  "₹${currentCustomer.totalPaid.toStringAsFixed(0)}",
                   Icons.payments,
                   Colors.blue,
                 ),
 
                 infoCard(
                   "Opening Balance",
-                  "₹${widget.customer.openingBalance.toStringAsFixed(0)}",
+                  "₹${currentCustomer.openingBalance.toStringAsFixed(0)}",
                   Icons.account_balance_wallet,
                   Colors.orange,
                 ),
@@ -327,7 +454,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                     MaterialPageRoute(
                       builder: (_) => SaleListScreen(
                         factory: widget.factory,
-                        customer: widget.customer,
+                        customer: currentCustomer,
                       ),
                     ),
                   );
@@ -433,7 +560,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            PaymentHistoryScreen(customer: widget.customer),
+                            PaymentHistoryScreen(customer: currentCustomer),
                       ),
                     );
                   },
@@ -462,7 +589,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            CustomerLedgerScreen(customer: widget.customer),
+                            CustomerLedgerScreen(customer: currentCustomer),
                       ),
                     );
                   },

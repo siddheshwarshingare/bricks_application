@@ -4,6 +4,7 @@ class MaterialExpenseModel {
   final String id;
   final String factoryId;
   final String materialName;
+  final String category; // NEW
   final double amount;
   final String note;
   final Timestamp expenseDate;
@@ -13,6 +14,7 @@ class MaterialExpenseModel {
     required this.id,
     required this.factoryId,
     required this.materialName,
+    required this.category, // NEW
     required this.amount,
     required this.note,
     required this.expenseDate,
@@ -23,6 +25,7 @@ class MaterialExpenseModel {
     return {
       "factoryId": factoryId,
       "materialName": materialName,
+      "category": category, // NEW
       "amount": amount,
       "note": note,
       "expenseDate": expenseDate,
@@ -37,6 +40,10 @@ class MaterialExpenseModel {
       id: doc.id,
       factoryId: data["factoryId"] ?? "",
       materialName: data["materialName"] ?? "",
+
+      // Handles old Firestore records too
+      category: data["category"] ?? "Other",
+
       amount: (data["amount"] ?? 0).toDouble(),
       note: data["note"] ?? "",
       expenseDate: data["expenseDate"] ?? Timestamp.now(),

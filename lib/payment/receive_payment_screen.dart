@@ -1,6 +1,7 @@
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/sale_model.dart';
 import 'package:bricks_application/repositories/sale_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ReceivePaymentScreen extends StatefulWidget {
@@ -19,7 +20,85 @@ class ReceivePaymentScreen extends StatefulWidget {
 class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
   final _formKey = GlobalKey<FormState>();
   final SaleRepository repository = SaleRepository();
-  // final PaymentRepository repository = PaymentRepository();
+  SaleModel? currentSale;
+  CustomerModel? currentCustomer;
+  bool loadingSale = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    currentSale = widget.sale;
+    _loadLatestSale();
+  }
+
+  Future<void> _loadLatestSale() async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      final saleRef = firestore
+          .collection('factories')
+          .doc(widget.sale.factoryId)
+          .collection('sales')
+          .doc(widget.sale.id);
+
+      final customerRef = firestore
+          .collection('factories')
+          .doc(widget.sale.factoryId)
+          .collection('customers')
+          .doc(widget.customer.id);
+
+      // Get latest values from SERVER
+      final results = await Future.wait([
+        saleRef.get(const GetOptions(source: Source.server)),
+        customerRef.get(const GetOptions(source: Source.server)),
+      ]);
+
+      final saleDoc = results[0];
+      final customerDoc = results[1];
+
+      if (!mounted) return;
+
+      if (!saleDoc.exists) {
+        setState(() {
+          loadingSale = false;
+          currentSale = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("This sale no longer exists.")),
+        );
+
+        return;
+      }
+
+      final latestSale = SaleModel.fromFirestore(saleDoc);
+
+      CustomerModel? latestCustomer;
+
+      if (customerDoc.exists) {
+        latestCustomer = CustomerModel.fromFirestore(customerDoc);
+      }
+
+      setState(() {
+        currentSale = latestSale;
+        currentCustomer = latestCustomer;
+        loadingSale = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        loadingSale = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Unable to load latest payment information: $e"),
+        ),
+      );
+    }
+  }
 
   final TextEditingController amountController = TextEditingController();
   final TextEditingController referenceController = TextEditingController();
@@ -56,6 +135,13 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
   Future<void> savePayment() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (currentSale == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Sale information is not available.")),
+      );
+      return;
+    }
+
     final amount = double.tryParse(amountController.text.trim());
 
     if (amount == null || amount <= 0) {
@@ -65,10 +151,22 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
       return;
     }
 
-    if (amount > widget.sale.pendingAmount) {
+    // ALWAYS use latest Firestore sale
+    final pendingAmount = currentSale!.pendingAmount;
+
+    if (pendingAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Payment cannot exceed sale pending amount."),
+        const SnackBar(content: Text("This sale has no pending amount.")),
+      );
+      return;
+    }
+
+    if (amount > pendingAmount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Payment cannot exceed pending amount of ₹${pendingAmount.toStringAsFixed(2)}",
+          ),
         ),
       );
       return;
@@ -80,8 +178,8 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
 
     try {
       await repository.addPaymentToSale(
-        sale: widget.sale,
-        customer: widget.customer,
+        sale: currentSale!,
+        customer: currentCustomer ?? widget.customer,
         amount: amount,
         paymentDate: paymentDate,
         paymentMethod: paymentMethod,
@@ -110,7 +208,6 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
       }
     }
   }
-
   // Future<void> savePayment() async {
   //   if (!_formKey.currentState!.validate()) return;
 
@@ -163,7 +260,7 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Receive Payment",
+          "Receive Payment tt",
           style: TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -222,21 +319,47 @@ class _ReceivePaymentScreenState extends State<ReceivePaymentScreen> {
 
                       const Divider(height: 30),
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Column(
                         children: [
-                          const Text(
-                            "Current Pending",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Selected Sale Pending",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                loadingSale
+                                    ? "Loading..."
+                                    : "₹ ${(currentSale?.pendingAmount ?? 0).toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
 
-                          Text(
-                            "₹ ${widget.customer.pendingBalance.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Customer Total Pending",
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                loadingSale
+                                    ? "Loading..."
+                                    : "₹ ${(currentCustomer?.pendingBalance ?? 0).toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

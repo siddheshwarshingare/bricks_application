@@ -4,6 +4,7 @@ import 'package:bricks_application/models/factory_model.dart';
 import 'package:bricks_application/screens/materials/material_list_screen.dart';
 import 'package:bricks_application/screens/production/production_list_screen.dart';
 import 'package:bricks_application/screens/reports/reports_screen.dart';
+import 'package:bricks_application/screens/stock_screen.dart';
 import 'package:bricks_application/screens/worker/worker_list_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -175,6 +176,21 @@ class FactoryManagementScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => ExpenseScreen(factory: factory),
+                      ),
+                    );
+                  },
+                ),
+                _managementCard(
+                  context,
+                  title: "Stock",
+                  subtitle: "Track factory Stock",
+                  icon: Icons.account_balance_wallet_rounded,
+                  color: Colors.red,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StockScreen(factory: factory),
                       ),
                     );
                   },

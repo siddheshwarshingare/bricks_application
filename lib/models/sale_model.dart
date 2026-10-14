@@ -6,7 +6,9 @@ class SaleModel {
   final String customerId;
   final String customerName;
 
-  final String brickType;
+  final String productId;
+  final String productName;
+
   final double quantity;
   final double rate;
   final double totalAmount;
@@ -24,7 +26,8 @@ class SaleModel {
     required this.factoryId,
     required this.customerId,
     required this.customerName,
-    required this.brickType,
+    required this.productId,
+    required this.productName,
     required this.quantity,
     required this.rate,
     required this.totalAmount,
@@ -41,7 +44,8 @@ class SaleModel {
       'factoryId': factoryId,
       'customerId': customerId,
       'customerName': customerName,
-      'brickType': brickType,
+      'productId': productId,
+      'productName': productName,
       'quantity': quantity,
       'rate': rate,
       'totalAmount': totalAmount,
@@ -62,12 +66,16 @@ class SaleModel {
       factoryId: data['factoryId'] ?? '',
       customerId: data['customerId'] ?? '',
       customerName: data['customerName'] ?? '',
-      brickType: data['brickType'] ?? '',
+
+      productId: data['productId'] ?? '',
+      productName: data['productName'] ?? data['brickType'] ?? '',
+
       quantity: (data['quantity'] ?? 0).toDouble(),
       rate: (data['rate'] ?? 0).toDouble(),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
       paidAmount: (data['paidAmount'] ?? 0).toDouble(),
       pendingAmount: (data['pendingAmount'] ?? 0).toDouble(),
+
       vehicleNumber: data['vehicleNumber'] ?? '',
       remarks: data['remarks'] ?? '',
       saleDate: data['saleDate'] ?? Timestamp.now(),
@@ -80,7 +88,8 @@ class SaleModel {
     String? factoryId,
     String? customerId,
     String? customerName,
-    String? brickType,
+    String? productId,
+    String? productName,
     double? quantity,
     double? rate,
     double? totalAmount,
@@ -96,7 +105,8 @@ class SaleModel {
       factoryId: factoryId ?? this.factoryId,
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
-      brickType: brickType ?? this.brickType,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
       quantity: quantity ?? this.quantity,
       rate: rate ?? this.rate,
       totalAmount: totalAmount ?? this.totalAmount,

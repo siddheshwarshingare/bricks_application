@@ -57,7 +57,7 @@ class CustomerRepository {
     String factoryId,
     String customerId,
   ) async {
-    final doc = await _firestore
+    final doc = await FirebaseFirestore.instance
         .collection('factories')
         .doc(factoryId)
         .collection('customers')

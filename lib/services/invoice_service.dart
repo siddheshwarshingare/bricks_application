@@ -349,7 +349,7 @@ class InvoiceService {
 
           pw.SizedBox(height: 10),
 
-          detailRow("Brick Type", sale.brickType),
+          //  detailRow("Brick Type", sale.brickType),
           detailRow("Quantity", "${sale.quantity.toStringAsFixed(0)} Bricks"),
           detailRow("Rate", "₹${sale.rate.toStringAsFixed(2)}"),
           detailRow("Vehicle", sale.vehicleNumber),

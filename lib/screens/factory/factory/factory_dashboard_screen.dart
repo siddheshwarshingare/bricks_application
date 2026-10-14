@@ -59,12 +59,12 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
       elevation: 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        //borderRadius: BorderRadius.circular(20),
         splashColor: color.withValues(alpha: .08),
         highlightColor: color.withValues(alpha: .04),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            //   borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.grey.shade100),
             boxShadow: [
               BoxShadow(
@@ -79,13 +79,13 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                height: 41,
-                width: 41,
+                height: 22,
+                width: 22,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: .10),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: color, size: 11),
               ),
 
               const SizedBox(height: 11),
@@ -117,7 +117,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
   ) {
     return Container(
       height: 20,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -133,53 +133,56 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                height: 11,
-                width: 11,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Icon(icon, color: color, size: 11),
-              ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //   children: [
+          //     Container(
+          //       height: 11,
+          //       width: 11,
+          //       decoration: BoxDecoration(
+          //         color: color.withValues(alpha: .10),
+          //         borderRadius: BorderRadius.circular(2),
+          //       ),
+          //       child: Icon(icon, color: color, size: 11),
+          //     ),
 
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: Colors.grey.shade300,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          //  const Spacer(),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: "Poppins",
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xff111827),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
+          //     Icon(
+          //       Icons.arrow_forward_ios_rounded,
+          //       size: 11,
+          //       color: Colors.grey.shade300,
+          //     ),
+          //   ],
+          // ),
+          const SizedBox(height: 2),
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: "Poppins",
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff111827),
             ),
           ),
+
+          const SizedBox(height: 2),
+          //  const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: "Poppins",
+              fontSize: 11,
+              // fontWeight: FontWeight.w500,
+              // color: Colors.grey.shade500,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff111827),
+            ),
+          ),
+
+          const SizedBox(height: 2),
         ],
       ),
     );
@@ -272,12 +275,10 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
             ],
           ),
 
-          const SizedBox(height: 18),
-
+          const SizedBox(height: 4),
           Container(height: 1, color: Colors.white.withValues(alpha: .15)),
 
-          const SizedBox(height: 14),
-
+          const SizedBox(height: 4),
           Row(
             children: [
               const Icon(
@@ -381,21 +382,34 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
 
   Future<void> _receivePayment() async {
     // 1. Select customer
-    final customer = await CustomerSelector.show(context, customers);
+    final selectedCustomer = await CustomerSelector.show(context, customers);
 
-    if (customer == null || !mounted) return;
+    if (selectedCustomer == null || !mounted) return;
 
-    // 2. Get customer's sales
+    // 2. Fetch LATEST customer data
+    final freshCustomer = await customerRepository.getCustomer(
+      widget.factory.id,
+      selectedCustomer.id,
+    );
+
+    if (freshCustomer == null || !mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Customer not found.")));
+      return;
+    }
+
+    // 3. Get customer's latest sales
     final sales = await saleRepository
-        .getCustomerSales(widget.factory.id, customer.id)
+        .getCustomerSales(widget.factory.id, freshCustomer.id)
         .first;
 
-    // 3. Get only pending sales
+    // 4. Get pending sales
     final pendingSales = sales.where((sale) => sale.pendingAmount > 0).toList();
 
     if (!mounted) return;
 
-    // 4. No pending sales
+    // 5. No pending sales
     if (pendingSales.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("This customer has no pending sales.")),
@@ -403,7 +417,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
       return;
     }
 
-    // 5. Select pending sale
+    // 6. Select pending sale
     final SaleModel? selectedSale = await showDialog<SaleModel>(
       context: context,
       builder: (dialogContext) {
@@ -424,7 +438,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                     "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
                   ),
                   trailing: Text(
-                    sale.brickType,
+                    sale.productName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   onTap: () {
@@ -440,12 +454,12 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
 
     if (selectedSale == null || !mounted) return;
 
-    // 6. Navigate to ReceivePaymentScreen
+    // 7. Navigate with FRESH customer + LIVE sale
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) =>
-            ReceivePaymentScreen(customer: customer, sale: selectedSale),
+            ReceivePaymentScreen(customer: freshCustomer, sale: selectedSale),
       ),
     );
   }
@@ -592,7 +606,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
 
               buildDashboardFilter(),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 11),
 
               StreamBuilder<DashboardModel>(
                 stream: dashboardRepository.getDashboardData(
@@ -607,12 +621,12 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                   final data = snapshot.data!;
 
                   return GridView.count(
-                    crossAxisCount: 2,
+                    crossAxisCount: 3,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisSpacing: 11,
                     mainAxisSpacing: 11,
-                    childAspectRatio: 1.6,
+                    childAspectRatio: 1.8,
                     children: [
                       buildDashboardCard(
                         "Production",
@@ -684,10 +698,10 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 15,
-                crossAxisSpacing: 15,
-                childAspectRatio: 1.6,
+                crossAxisCount: 3,
+                mainAxisSpacing: 11,
+                crossAxisSpacing: 11,
+                childAspectRatio: 1.7,
                 children: [
                   // QuickActionCard(
                   //   title: "Production",
@@ -831,7 +845,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                                       "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
                                     ),
                                     trailing: Text(
-                                      sale.brickType,
+                                      sale.productName,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -924,7 +938,7 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                                     subtitle: Text(
                                       "Pending: ₹ ${sale.pendingAmount.toStringAsFixed(2)}",
                                     ),
-                                    trailing: Text(sale.brickType),
+                                    trailing: Text(sale.productName),
                                     onTap: () {
                                       Navigator.pop(context, sale);
                                     },
@@ -1101,14 +1115,14 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 11),
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
-                childAspectRatio: .95,
+                childAspectRatio: 1.4,
                 children: [
                   menuCard(
                     context,
@@ -1253,6 +1267,26 @@ class _FactoryDashboardScreenState extends State<FactoryDashboardScreen> {
             label: Text("Month"),
             icon: Icon(Icons.calendar_month_rounded),
           ),
+          // ButtonSegment<DashboardFilter>(
+          //   value: DashboardFilter.last3Months,
+          //   label: Text("3 Months"),
+          //   icon: Icon(Icons.calendar_view_month_rounded),
+          // ),
+          // ButtonSegment<DashboardFilter>(
+          //   value: DashboardFilter.last6Months,
+          //   label: Text("6 Months"),
+          //   icon: Icon(Icons.date_range_rounded),
+          // ),
+          // ButtonSegment<DashboardFilter>(
+          //   value: DashboardFilter.thisYear,
+          //   label: Text("Year"),
+          //   icon: Icon(Icons.calendar_today_rounded),
+          // ),
+          // ButtonSegment<DashboardFilter>(
+          //   value: DashboardFilter.custom,
+          //   label: Text("Custom"),
+          //   icon: Icon(Icons.tune_rounded),
+          // ),
         ],
         selected: {selectedFilter},
         onSelectionChanged: (Set<DashboardFilter> selection) {

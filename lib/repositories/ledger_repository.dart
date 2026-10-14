@@ -33,7 +33,7 @@ class LedgerRepository {
             debit: sale.totalAmount,
             credit: 0,
             balance: 0,
-            description: sale.brickType,
+            description: sale.productName,
           ),
         );
       }
