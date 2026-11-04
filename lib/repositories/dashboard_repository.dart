@@ -79,6 +79,9 @@ class DashboardRepository {
         pendingStream = saleRepository.monthPending(factoryId);
 
         break;
+      case DashboardFilter.customDateRange:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
     //final pendingStream = customerRepository.totalPendingAmount(factoryId);
 

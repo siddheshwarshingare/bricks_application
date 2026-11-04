@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ProductionModel {
   final String id;
   final String factoryId;
+  final String productId;
+  final String productName;
+
   final String workerId;
   final String workerName;
   final int bricksProduced;
@@ -16,6 +19,10 @@ class ProductionModel {
   ProductionModel({
     required this.id,
     required this.factoryId,
+
+    required this.productId,
+    required this.productName,
+
     required this.workerId,
     required this.workerName,
     required this.bricksProduced,
@@ -32,6 +39,8 @@ class ProductionModel {
     return {
       "factoryId": factoryId,
       "workerId": workerId,
+      "productId": productId,
+      "productName": productName,
       "workerName": workerName,
       "bricksProduced": bricksProduced,
       "remarks": remarks,
@@ -51,6 +60,9 @@ class ProductionModel {
       id: doc.id,
       factoryId: data["factoryId"] ?? "",
       workerId: data["workerId"] ?? "",
+      productId: data["productId"] ?? "",
+      productName: data["productName"] ?? "",
+
       workerName: data["workerName"] ?? "",
       bricksProduced: data["bricksProduced"] ?? 0,
       remarks: data["remarks"] ?? "",

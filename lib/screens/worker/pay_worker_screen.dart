@@ -59,9 +59,16 @@ class _PayWorkerScreenState extends State<PayWorkerScreen> {
   Future<void> savePayment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    final amount = double.tryParse(amountController.text.trim());
+
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid amount greater than zero")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
 
     try {
       final payment = WorkerPaymentModel(
@@ -69,7 +76,7 @@ class _PayWorkerScreenState extends State<PayWorkerScreen> {
         factoryId: widget.worker.factoryId,
         workerId: widget.worker.id,
         workerName: widget.worker.name,
-        amount: double.parse(amountController.text),
+        amount: amount,
         paymentMethod: paymentMethod,
         remarks: remarksController.text.trim(),
         paymentDate: Timestamp.fromDate(paymentDate),
@@ -84,16 +91,29 @@ class _PayWorkerScreenState extends State<PayWorkerScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text("Salary Paid Successfully")));
 
-      Navigator.pop(context);
-    } catch (e) {
+      Navigator.pop(context, true);
+    } on FirebaseException catch (e) {
+      debugPrint("Firebase error: ${e.code} - ${e.message}");
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Firebase error: ${e.message ?? e.code}")),
+      );
+    } catch (e, stackTrace) {
+      debugPrint("Payment error: $e");
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ).showSnackBar(SnackBar(content: Text("Failed to save payment: $e")));
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   @override

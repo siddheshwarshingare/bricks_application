@@ -182,8 +182,7 @@ class _SaleListScreenState extends State<SaleListScreen> {
           children: [
             const SizedBox(height: 8),
 
-            Text("Brick : ${sale.brickType}"),
-
+            //  Text("Brick : ${sale.brickType}"),
             Text("Qty : ${sale.quantity}"),
 
             Text("Rate : ₹${sale.rate}"),

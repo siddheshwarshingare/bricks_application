@@ -9,4 +9,5 @@ enum DashboardFilter {
   last6Months,
   thisYear,
   custom,
+  customDateRange,
 }

@@ -1,6 +1,8 @@
 import 'package:bricks_application/models/customer_model.dart';
 import 'package:bricks_application/models/factory_model.dart';
+import 'package:bricks_application/models/product_model.dart';
 import 'package:bricks_application/models/sale_model.dart';
+import 'package:bricks_application/repositories/product_repository.dart';
 import 'package:bricks_application/repositories/sale_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ class AddSaleScreen extends StatefulWidget {
   final FactoryModel factory;
   final CustomerModel customer;
   final SaleModel? sale;
+
   const AddSaleScreen({
     super.key,
     required this.factory,
@@ -24,36 +27,135 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final SaleRepository repository = SaleRepository();
+  final ProductRepository productRepository = ProductRepository();
+
+  ProductModel? selectedProduct;
 
   late TextEditingController quantityController;
   late TextEditingController rateController;
   late TextEditingController paidController;
   late TextEditingController vehicleController;
   late TextEditingController remarksController;
-
+  String? selectedProductId;
   DateTime saleDate = DateTime.now();
-
-  String brickType = "Red Brick";
 
   double totalAmount = 0;
   double pendingAmount = 0;
 
-  final List<String> brickTypes = [
-    "Red Brick",
-    "Fly Ash Brick",
-    "Cement Brick",
-    "Concrete Block",
-  ];
+  @override
+  void initState() {
+    super.initState();
+
+    quantityController = TextEditingController();
+    rateController = TextEditingController();
+    paidController = TextEditingController(text: "0");
+    vehicleController = TextEditingController();
+    remarksController = TextEditingController();
+
+    quantityController.addListener(calculateTotal);
+    rateController.addListener(calculateTotal);
+    paidController.addListener(calculateTotal);
+
+    // Load existing sale data when editing.
+    if (widget.sale != null) {
+      quantityController.text = widget.sale!.quantity.toString();
+      rateController.text = widget.sale!.rate.toString();
+      paidController.text = widget.sale!.paidAmount.toString();
+      vehicleController.text = widget.sale!.vehicleNumber;
+      remarksController.text = widget.sale!.remarks;
+      saleDate = widget.sale!.saleDate.toDate();
+    }
+  }
+
+  @override
+  void dispose() {
+    quantityController.dispose();
+    rateController.dispose();
+    paidController.dispose();
+    vehicleController.dispose();
+    remarksController.dispose();
+    super.dispose();
+  }
+
+  void calculateTotal() {
+    final quantity = double.tryParse(quantityController.text) ?? 0;
+    final rate = double.tryParse(rateController.text) ?? 0;
+    final paid = double.tryParse(paidController.text) ?? 0;
+
+    final total = quantity * rate;
+    final pending = total - paid;
+
+    if (!mounted) return;
+
+    setState(() {
+      totalAmount = total;
+      pendingAmount = pending < 0 ? 0 : pending;
+    });
+  }
+
+  Future<void> selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: saleDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2050),
+    );
+
+    if (picked != null) {
+      setState(() {
+        saleDate = picked;
+      });
+    }
+  }
+
   Future<void> saveSale() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final quantity = double.parse(quantityController.text);
-    final rate = double.parse(rateController.text);
-    final paid = double.parse(paidController.text);
+    if (selectedProduct == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please select a product")));
+      return;
+    }
+
+    final quantity = double.tryParse(quantityController.text);
+    final rate = double.tryParse(rateController.text);
+    final paid = double.tryParse(paidController.text);
+
+    if (quantity == null || quantity <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Enter a valid quantity")));
+      return;
+    }
+
+    if (rate == null || rate < 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Enter a valid rate")));
+      return;
+    }
+
+    if (paid == null || paid < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid paid amount")),
+      );
+      return;
+    }
 
     final total = quantity * rate;
+
+    if (paid > total) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Paid amount cannot be greater than total amount"),
+        ),
+      );
+      return;
+    }
+
     final pending = total - paid;
 
     final sale = SaleModel(
@@ -62,11 +164,12 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
       customerId: widget.customer.id,
       customerName: widget.customer.name,
 
-      brickType: brickType,
+      // Product information
+      productId: selectedProduct!.id,
+      productName: selectedProduct!.name,
 
       quantity: quantity,
       rate: rate,
-
       totalAmount: total,
       paidAmount: paid,
       pendingAmount: pending,
@@ -99,9 +202,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
+      );
     }
   }
 
@@ -131,82 +236,86 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  Widget buildBrickDropdown() {
+  Widget buildProductDropdown() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
-      child: DropdownButtonFormField<String>(
-        initialValue: brickType,
-        decoration: InputDecoration(
-          labelText: "Brick Type",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        items: brickTypes.map((type) {
-          return DropdownMenuItem(value: type, child: Text(type));
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            brickType = value!;
-          });
+      child: StreamBuilder<List<ProductModel>>(
+        stream: productRepository.getProducts(widget.factory.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Text(
+              "Error loading products: ${snapshot.error}",
+              style: const TextStyle(color: Colors.red),
+            );
+          }
+
+          final products = snapshot.data ?? [];
+
+          if (products.isEmpty) {
+            return const Text(
+              "No products available",
+              style: TextStyle(color: Colors.red),
+            );
+          }
+
+          final effectiveProductId =
+              selectedProductId ??
+              (widget.sale == null ? null : widget.sale!.productId);
+
+          final validProductId =
+              products.any((product) => product.id == effectiveProductId)
+              ? effectiveProductId
+              : null;
+
+          return DropdownButtonFormField<String>(
+            initialValue: validProductId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: "Select Product",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            hint: const Text("Select Product"),
+            items: products.map((product) {
+              return DropdownMenuItem<String>(
+                value: product.id,
+                child: Text(
+                  "${product.name} - "
+                  "${product.size.isEmpty ? product.id : product.size}",
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (productId) {
+              if (productId == null) return;
+
+              final product = products.firstWhere((p) => p.id == productId);
+
+              setState(() {
+                selectedProductId = product.id;
+                selectedProduct = product;
+              });
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Please select product";
+              }
+              return null;
+            },
+          );
         },
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    quantityController = TextEditingController();
-    rateController = TextEditingController();
-    paidController = TextEditingController(text: "0");
-    vehicleController = TextEditingController();
-    remarksController = TextEditingController();
-
-    quantityController.addListener(calculateTotal);
-    rateController.addListener(calculateTotal);
-    paidController.addListener(calculateTotal);
-  }
-
-  @override
-  void dispose() {
-    quantityController.dispose();
-    rateController.dispose();
-    paidController.dispose();
-    vehicleController.dispose();
-    remarksController.dispose();
-    super.dispose();
-  }
-
-  void calculateTotal() {
-    final quantity = double.tryParse(quantityController.text) ?? 0;
-
-    final rate = double.tryParse(rateController.text) ?? 0;
-
-    final paid = double.tryParse(paidController.text) ?? 0;
-
-    setState(() {
-      totalAmount = quantity * rate;
-      pendingAmount = totalAmount - paid;
-
-      if (pendingAmount < 0) {
-        pendingAmount = 0;
-      }
-    });
-  }
-
-  Future<void> selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: saleDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2050),
-    );
-
-    if (picked != null) {
-      setState(() {
-        saleDate = picked;
-      });
-    }
   }
 
   @override
@@ -240,9 +349,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const Divider(),
-
                       ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.person)),
                         title: Text(widget.customer.name),
@@ -274,28 +381,34 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
               const SizedBox(height: 15),
 
-              /// Brick Type
-              buildBrickDropdown(),
+              /// Product
+              buildProductDropdown(),
 
               /// Quantity
               buildTextField(
                 controller: quantityController,
                 label: "Quantity",
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
 
               /// Rate
               buildTextField(
                 controller: rateController,
                 label: "Rate",
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
 
               /// Paid Amount
               buildTextField(
                 controller: paidController,
                 label: "Paid Amount",
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
 
               /// Vehicle Number
@@ -340,9 +453,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           ),
                         ],
                       ),
-
                       const Divider(),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

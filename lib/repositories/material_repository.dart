@@ -4,6 +4,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class MaterialRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Record material usage without deleting purchase history.
+  Future<void> addMaterialUsage({
+    required String factoryId,
+    required String materialName,
+    required String unit,
+    required double quantity,
+    required DateTime usageDate,
+    String remarks = '',
+  }) async {
+    if (quantity <= 0) {
+      throw Exception('Usage quantity must be greater than zero.');
+    }
+
+    final normalizedName = materialName.trim().toLowerCase();
+
+    await _firestore
+        .collection('factories')
+        .doc(factoryId)
+        .collection('material_usages')
+        .add({
+          'factoryId': factoryId,
+          'materialName': materialName.trim(),
+          'materialKey': normalizedName,
+          'unit': unit.trim(),
+          'quantity': quantity,
+          'usageDate': Timestamp.fromDate(usageDate),
+          'remarks': remarks.trim(),
+          'createdAt': Timestamp.now(),
+        });
+  }
+
+  /// Stream material usage records.
+  Stream<QuerySnapshot<Map<String, dynamic>>> getMaterialUsages(
+    String factoryId,
+  ) {
+    return _firestore
+        .collection('factories')
+        .doc(factoryId)
+        .collection('material_usages')
+        .snapshots();
+  }
+
   /// Add Material
   Future<void> addMaterial(MaterialModel material) async {
     final docRef = _firestore
