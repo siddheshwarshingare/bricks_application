@@ -21,6 +21,9 @@ class SaleModel {
   final Timestamp saleDate;
   final Timestamp createdAt;
 
+  // Delivery status for this individual order.
+  final String deliveryStatus;
+
   SaleModel({
     required this.id,
     required this.factoryId,
@@ -37,6 +40,7 @@ class SaleModel {
     required this.remarks,
     required this.saleDate,
     required this.createdAt,
+    this.deliveryStatus = 'Pending',
   });
 
   Map<String, dynamic> toMap() {
@@ -55,6 +59,7 @@ class SaleModel {
       'remarks': remarks,
       'saleDate': saleDate,
       'createdAt': createdAt,
+      'deliveryStatus': deliveryStatus,
     };
   }
 
@@ -66,20 +71,18 @@ class SaleModel {
       factoryId: data['factoryId'] ?? '',
       customerId: data['customerId'] ?? '',
       customerName: data['customerName'] ?? '',
-
       productId: data['productId'] ?? '',
       productName: data['productName'] ?? data['brickType'] ?? '',
-
       quantity: (data['quantity'] ?? 0).toDouble(),
       rate: (data['rate'] ?? 0).toDouble(),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
       paidAmount: (data['paidAmount'] ?? 0).toDouble(),
       pendingAmount: (data['pendingAmount'] ?? 0).toDouble(),
-
       vehicleNumber: data['vehicleNumber'] ?? '',
       remarks: data['remarks'] ?? '',
       saleDate: data['saleDate'] ?? Timestamp.now(),
       createdAt: data['createdAt'] ?? Timestamp.now(),
+      deliveryStatus: data['deliveryStatus'] ?? 'Pending',
     );
   }
 
@@ -99,6 +102,7 @@ class SaleModel {
     String? remarks,
     Timestamp? saleDate,
     Timestamp? createdAt,
+    String? deliveryStatus,
   }) {
     return SaleModel(
       id: id ?? this.id,
@@ -116,6 +120,7 @@ class SaleModel {
       remarks: remarks ?? this.remarks,
       saleDate: saleDate ?? this.saleDate,
       createdAt: createdAt ?? this.createdAt,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
     );
   }
 

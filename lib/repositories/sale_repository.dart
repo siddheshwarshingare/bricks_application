@@ -1129,6 +1129,21 @@ class SaleRepository {
           return total;
         });
   }
+  // ============================================================
+  // UPDATE ORDER DELIVERY STATUS
+  // ============================================================
+
+  Future<void> updateDeliveryStatus({
+    required String factoryId,
+    required String saleId,
+    required String status,
+  }) async {
+    if (!['Pending', 'Delivered'].contains(status)) {
+      throw Exception('Invalid delivery status');
+    }
+
+    await _sales(factoryId).doc(saleId).update({'deliveryStatus': status});
+  }
 
   Future<List<SaleModel>> getCustomerSalesOnce(
     String factoryId,

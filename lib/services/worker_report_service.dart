@@ -4,6 +4,7 @@ import 'package:bricks_application/models/factory_model.dart';
 import 'package:bricks_application/models/production_model.dart';
 import 'package:bricks_application/models/worker_model.dart';
 import 'package:bricks_application/services/pdf_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -35,7 +36,26 @@ class WorkerReportService {
     }
 
     final pending = totalEarned - totalPaid;
+    double totalAdvanceGiven = 0;
 
+    final paymentSnapshot = await FirebaseFirestore.instance
+        .collection('factories')
+        .doc(factory.id)
+        .collection('worker_payments')
+        .where('workerId', isEqualTo: worker.id)
+        .get();
+
+    for (final doc in paymentSnapshot.docs) {
+      final amount = doc.data()['amount'];
+
+      if (amount is num) {
+        totalAdvanceGiven += amount.toDouble();
+      } else if (amount is String) {
+        totalAdvanceGiven += double.tryParse(amount) ?? 0;
+      }
+    }
+
+    final remainingAdvance = totalAdvanceGiven - totalReturned;
     pdf.addPage(
       pw.MultiPage(
         pageTheme: PdfThemeHelper.pageTheme(),
@@ -110,10 +130,9 @@ class WorkerReportService {
             "₹${totalPaid.toStringAsFixed(2)}",
             PdfColors.blue,
           ),
-
           summaryRow(
-            "Pending",
-            "₹${pending.toStringAsFixed(2)}",
+            "Remaining Advance",
+            "₹${remainingAdvance.toStringAsFixed(2)}",
             PdfColors.red,
           ),
 

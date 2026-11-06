@@ -1,5 +1,6 @@
 import 'package:bricks_application/models/factory_model.dart';
 import 'package:bricks_application/repositories/factory_repository.dart';
+import 'package:bricks_application/screens/create_owner_screen.dart';
 import 'package:bricks_application/screens/factory/add_factory_screen.dart';
 import 'package:bricks_application/screens/factory/factory/factory_dashboard_screen.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,18 @@ class _FactoryListScreenState extends State<FactoryListScreen> {
             color: Colors.white,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: "Create Owner",
+            icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateOwnerScreen()),
+              );
+            },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 61, 110, 218),
@@ -195,7 +208,9 @@ class _FactoryListScreenState extends State<FactoryListScreen> {
                             width: 55,
                             height: 55,
                             decoration: BoxDecoration(
-                              color: const Color(0xff2563EB).withValues(alpha: .12),
+                              color: const Color(
+                                0xff2563EB,
+                              ).withValues(alpha: .12),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(

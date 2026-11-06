@@ -1,6 +1,7 @@
 import 'package:bricks_application/firebase_options.dart';
 import 'package:bricks_application/login_screen.dart';
 import 'package:bricks_application/models/factory_model.dart';
+import 'package:bricks_application/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class BrickApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }
