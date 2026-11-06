@@ -73,7 +73,9 @@ class _WorkerManagementScreenState extends State<WorkerManagementScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final workers = snapshot.data ?? [];
+                final workers = (snapshot.data ?? [])
+                    .where((worker) => worker.workerType == 'permanent')
+                    .toList();
 
                 final filteredWorkers = workers.where((worker) {
                   return worker.name.toLowerCase().contains(search) ||

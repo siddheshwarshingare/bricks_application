@@ -5,6 +5,7 @@ import 'package:bricks_application/screens/materials/material_list_screen.dart';
 import 'package:bricks_application/screens/production/production_list_screen.dart';
 import 'package:bricks_application/screens/reports/reports_screen.dart';
 import 'package:bricks_application/screens/stock_screen.dart';
+import 'package:bricks_application/screens/worker/temporary_worker_management_screen.dart';
 import 'package:bricks_application/screens/worker/worker_list_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -154,7 +155,22 @@ class FactoryManagementScreen extends StatelessWidget {
                     );
                   },
                 ),
-
+                _managementCard(
+                  context,
+                  title: "Temporary Workers",
+                  subtitle: "View factory reports",
+                  icon: Icons.bar_chart_rounded,
+                  color: Colors.purple,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            TemporaryWorkerManagementScreen(factory: factory),
+                      ),
+                    );
+                  },
+                ),
                 _managementCard(
                   context,
                   title: "Settings",

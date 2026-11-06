@@ -11,8 +11,15 @@ class WorkerModel {
   final bool isActive;
   final Timestamp joiningDate;
   final Timestamp createdAt;
+
+  // Existing fields
   double ratePer1000;
   double advanceBalance;
+
+  // New fields
+  final String workerType;
+  final String paymentType;
+  final double dailyWage;
 
   WorkerModel({
     required this.id,
@@ -27,6 +34,11 @@ class WorkerModel {
     required this.createdAt,
     this.ratePer1000 = 0.0,
     this.advanceBalance = 0.0,
+
+    // Defaults preserve existing workers
+    this.workerType = 'permanent',
+    this.paymentType = 'monthly',
+    this.dailyWage = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +54,11 @@ class WorkerModel {
       'createdAt': createdAt,
       'ratePer1000': ratePer1000,
       'advanceBalance': advanceBalance,
+
+      // New fields
+      'workerType': workerType,
+      'paymentType': paymentType,
+      'dailyWage': dailyWage,
     };
   }
 
@@ -61,9 +78,14 @@ class WorkerModel {
       createdAt: data['createdAt'] ?? Timestamp.now(),
       ratePer1000: (data['ratePer1000'] ?? 0).toDouble(),
       advanceBalance: (data['advanceBalance'] ?? 0).toDouble(),
+
+      // New fields with backward compatibility
+      workerType: data['workerType'] ?? 'permanent',
+      paymentType: data['paymentType'] ?? 'monthly',
+      dailyWage: (data['dailyWage'] ?? 0).toDouble(),
     );
   }
-  // ADD HERE 👇
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) || other is WorkerModel && other.id == id;
